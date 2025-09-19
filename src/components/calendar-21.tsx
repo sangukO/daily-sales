@@ -1,14 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, CalendarDayButton } from "@/components/ui/calendar";
 import { ko } from "date-fns/locale";
+import type { Sale } from "@/types";
 
 export default function Calendar21() {
   const [date, setDate] = useState<Date>(new Date());
+  const [sales, setSales] = useState<Sale[]>([]);
 
-  //예시 매출
-  const salesDays = [new Date(2025, 8, 15), new Date(2025, 8, 17)];
+  useEffect(() => {
+    // 샘플 매출 데이터 불러오기
+    fetch("/sample-sales.json")
+      .then((response) => response.json())
+      .then((data: Sale[]) => {
+        setSales(data);
+      })
+      .catch((error) => {
+        console.error("데이터 불러오기 실패", error);
+      });
+  }, []);
+
+  const salesDays = sales.map((sale) => new Date(sale.date));
 
   return (
     <Calendar

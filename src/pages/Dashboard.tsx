@@ -1,5 +1,6 @@
 import Calendar21 from "../components/calendar-21";
 import Calendar27 from "../components/calendar-27";
+import ChartLine from "../components/chart/ChartLine";
 import { Label } from "../components/ui/label";
 import { useState } from "react";
 import { Switch } from "../components/ui/switch";
@@ -20,7 +21,7 @@ function Dashboard() {
               }}
             />
           </div>
-          {chartMode ? <Calendar27 /> : <Calendar21 />}
+          {chartMode ? <ChartLine /> : <Calendar21 />}
         </div>
       </div>
     </>

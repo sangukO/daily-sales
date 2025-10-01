@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { TrendingUp } from "lucide-react";
 import { CartesianGrid, LabelList, Line, LineChart, XAxis } from "recharts";
-
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -18,38 +18,69 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { Bold, Italic, Underline } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { Sale } from "@/types";
-import { Dropdown } from "react-day-picker";
+import { aggregateSalesByMonth } from "@/utils/aggregateSablesByMonth";
 
 export const description = "A line chart with a label";
 
 const chartConfig = {
   sales: {
     label: "매출",
-    color: "var(--chart-1)",
+    color: "#8884d8",
   },
 } satisfies ChartConfig;
 
 export function ChartLine() {
+  const [sales, setSales] = useState<Sale[]>([]);
   const [chartData, setChartData] = useState<Sale[]>([]);
   const [chartType, setChartType] = useState<"주간" | "월간" | "연간">("월간");
+
+  useEffect(() => {
+    // 샘플 매출 데이터 불러오기
+    fetch("/sample-sales.json")
+      .then((response) => response.json())
+      .then((data: Sale[]) => {
+        const formattedData = data.map((sale: any) => ({
+          ...sale,
+          date: new Date(sale.date),
+        }));
+        setSales(formattedData);
+      })
+      .catch((error) => {
+        console.error("데이터 불러오기 실패", error);
+      });
+  }, []);
+
+  const chartDataFor2025 = aggregateSalesByMonth(sales, 2025);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex justify-between">
-          매출 차트{" "}
-          <Dropdown
-            options={[
-              { value: 0, label: "주간", disabled: false },
-              { value: 1, label: "월간", disabled: false },
-              { value: 2, label: "연간", disabled: false },
-            ]}
-            value={chartType}
-            on={(option) => setChartType(option.value)}
-          />
+          매출 차트
+          <ToggleGroup
+            type="single"
+            size="lg"
+            defaultValue="월간"
+            onValueChange={(value) =>
+              setChartType(value as "주간" | "월간" | "연간")
+            }
+          >
+            <ToggleGroupItem value="주간" aria-label="주간">
+              주간
+            </ToggleGroupItem>
+            <ToggleGroupItem value="월간" aria-label="월간">
+              월간
+            </ToggleGroupItem>
+            <ToggleGroupItem value="연간" aria-label="연간">
+              연간
+            </ToggleGroupItem>
+          </ToggleGroup>
         </CardTitle>
         <CardDescription>
-          <div>January - June 2024</div>
+          <div>{new Date().getFullYear()}</div>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -76,12 +107,12 @@ export function ChartLine() {
               content={<ChartTooltipContent indicator="line" />}
             />
             <Line
-              dataKey="desktop"
+              dataKey="total"
               type="natural"
-              stroke="var(--color-desktop)"
+              stroke="#8884d8"
               strokeWidth={2}
               dot={{
-                fill: "var(--color-desktop)",
+                fill: "#8884d8",
               }}
               activeDot={{
                 r: 6,

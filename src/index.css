@@ -4,15 +4,15 @@
 @custom-variant dark (&:is(.dark *));
 
 @layer base {
-  .has-sale-day button {
+  .has-memo-day button {
     font-weight: bold;
     position: relative;
   }
 
-  .has-sale-day button::after {
+  .has-memo-day button::after {
     content: "";
     position: absolute;
-    top: 8px;
+    top: 2px;
     left: 50%;
     transform: translateX(-50%);
     width: 4px;
@@ -22,7 +22,7 @@
     transition: none;
   }
 
-  .has-sale-day button:hover::after {
+  .has-memo-day button:hover::after {
     background-color: theme("colors.blue.500");
   }
 }

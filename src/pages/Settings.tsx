@@ -22,7 +22,12 @@ function Settings() {
   return (
     <div>
       <ul>
-        <li onClick={handleResetAllData}>데이터 초기화</li>
+        <li
+          className="list-disc cursor-pointer border-b border-gray-500"
+          onClick={handleResetAllData}
+        >
+          데이터 초기화
+        </li>
       </ul>
     </div>
   );

@@ -22,7 +22,7 @@ function Layout({ children }: LayoutProps) {
         <div className="flex justify-around p-2">
           <Link
             to="/"
-            className={`flex flex-col items-center p-2 rounded-md ${
+            className={`flex flex-col flex-1 items-center p-2 rounded-md ${
               location.pathname === "/"
                 ? "text-primary"
                 : "text-muted-foreground"
@@ -33,7 +33,7 @@ function Layout({ children }: LayoutProps) {
           </Link>
           <Link
             to="/settings"
-            className={`flex flex-col items-center p-2 rounded-md ${
+            className={`flex flex-col flex-1 items-center p-2 rounded-md ${
               location.pathname === "/settings"
                 ? "text-primary"
                 : "text-muted-foreground"

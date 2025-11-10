@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { TrendingUp } from "lucide-react";
 import { CartesianGrid, LabelList, Line, LineChart, XAxis } from "recharts";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -18,10 +17,18 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Bold, Italic, Underline } from "lucide-react";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import type { Sale } from "@/types";
-import { aggregateSalesByMonth } from "@/utils/aggregateSablesByMonth";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { Sale, ChartData } from "@/types";
+import { aggregateSalesByMonth } from "@/utils/aggregateSales";
 
 export const description = "A line chart with a label";
 
@@ -34,7 +41,7 @@ const chartConfig = {
 
 export function ChartLine() {
   const [sales, setSales] = useState<Sale[]>([]);
-  const [chartData, setChartData] = useState<Sale[]>([]);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
   const [chartType, setChartType] = useState<"주간" | "월간" | "연간">("월간");
 
   useEffect(() => {
@@ -53,31 +60,38 @@ export function ChartLine() {
       });
   }, []);
 
-  const chartDataFor2025 = aggregateSalesByMonth(sales, 2025);
+  useEffect(() => {
+    // 차트 유형에 따라 데이터 집계
+    if (chartType === "월간") {
+      const chartDataFor2025 = aggregateSalesByMonth(sales, 2025);
+      chartDataFor2025 && setChartData(chartDataFor2025);
+    }
+  }, [chartType, sales]);
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex justify-between">
           매출 차트
-          <ToggleGroup
-            type="single"
-            size="lg"
-            defaultValue="월간"
-            onValueChange={(value) =>
-              setChartType(value as "주간" | "월간" | "연간")
-            }
-          >
-            <ToggleGroupItem value="주간" aria-label="주간">
-              주간
-            </ToggleGroupItem>
-            <ToggleGroupItem value="월간" aria-label="월간">
-              월간
-            </ToggleGroupItem>
-            <ToggleGroupItem value="연간" aria-label="연간">
-              연간
-            </ToggleGroupItem>
-          </ToggleGroup>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">{chartType}</Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+              <DropdownMenuLabel>Panel Position</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuRadioGroup
+                value={chartType}
+                onValueChange={(value) =>
+                  setChartType(value as "주간" | "월간" | "연간")
+                }
+              >
+                <DropdownMenuRadioItem value="주간">주간</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="월간">월간</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="연간">연간</DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </CardTitle>
         <CardDescription>
           <div>{new Date().getFullYear()}</div>
@@ -96,6 +110,7 @@ export function ChartLine() {
           >
             <CartesianGrid vertical={false} />
             <XAxis
+              lang="ko"
               dataKey="month"
               tickLine={false}
               axisLine={false}

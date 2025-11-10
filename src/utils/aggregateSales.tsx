@@ -1,9 +1,5 @@
 import type { Sale } from "@/types";
-
-interface ChartData {
-  month: string;
-  total: number;
-}
+import type { ChartData } from "@/types";
 
 export function aggregateSalesByMonth(
   sales: Sale[],
@@ -29,7 +25,7 @@ export function aggregateSalesByMonth(
 
   // 차트 라이브러리 형식으로 변환
   const chartData: ChartData[] = Array.from({ length: 12 }, (_, i) => {
-    const monthName = new Date(year, i).toLocaleString("en-US", {
+    const monthName = new Date(year, i).toLocaleString("ko-KR", {
       month: "long",
     });
     return {

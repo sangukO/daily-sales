@@ -262,27 +262,33 @@ export default function Calendar21() {
           </div>
 
           <DialogFooter>
-            <Button
-              variant="destructive"
-              className="mr-auto"
-              onClick={handleDelete}
-              disabled={!selectedSale?.id}
-            >
-              삭제
-            </Button>
+            <div className="flex w-full justify-between">
+              <div className="flex gap-2">
+                <Button
+                  variant="destructive"
+                  className="mr-auto"
+                  onClick={handleDelete}
+                  disabled={!selectedSale?.id}
+                >
+                  삭제
+                </Button>
+              </div>
 
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                닫기
-              </Button>
-            </DialogClose>
-            <Button
-              type="button"
-              onClick={handleSaveChanges}
-              disabled={!hasChanges}
-            >
-              저장
-            </Button>
+              <div className="flex gap-2">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    닫기
+                  </Button>
+                </DialogClose>
+                <Button
+                  type="button"
+                  onClick={handleSaveChanges}
+                  disabled={!hasChanges}
+                >
+                  저장
+                </Button>
+              </div>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

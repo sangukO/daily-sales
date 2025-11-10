@@ -4,3 +4,8 @@ export interface Sale {
   amount: number;
   memo?: string;
 }
+
+export interface ChartData {
+  month: string;
+  total: number;
+}

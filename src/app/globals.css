@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* react-day-picker: fit-content 해제 → 부모 너비에 맞게 풀 너비 확장 */
+.rdp-months {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.rdp-month {
+  width: 100% !important;
+}
+
+/* 테이블 풀 너비 + 고정 레이아웃으로 7등분 */
+.rdp-month_grid {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+/* 날짜 td 고정 너비 해제 */
+.rdp-day {
+  width: auto !important;
+}
+
+/* 날짜 버튼 셀 가득 채우기 */
+.rdp-day_button {
+  width: 100% !important;
+  max-width: 100% !important;
+}

@@ -53,6 +53,7 @@ export default function GoalSettings() {
   const [saved,      setSaved]      = useState(false);
   const [saving,     setSaving]     = useState(false);
   const [saveError,  setSaveError]  = useState(false);
+  const [weeklyAutoCalced,  setWeeklyAutoCalced]  = useState(false);
   const [monthlyAutoCalced, setMonthlyAutoCalced] = useState(false);
   const [yearlyAutoCalced,  setYearlyAutoCalced]  = useState(false);
 
@@ -78,6 +79,10 @@ export default function GoalSettings() {
     setDailyVal(v);
     const daily = parse(v);
     if (daily > 0) {
+      if (parse(weeklyVal) === 0 || weeklyAutoCalced) {
+        setWeeklyVal(fmt(String(daily * 6)));
+        setWeeklyAutoCalced(true);
+      }
       if (parse(monthlyVal) === 0 || monthlyAutoCalced) {
         setMonthlyVal(fmt(String(daily * 25)));
         setMonthlyAutoCalced(true);
@@ -87,6 +92,7 @@ export default function GoalSettings() {
         setYearlyAutoCalced(true);
       }
     } else {
+      if (weeklyAutoCalced)  { setWeeklyVal("");  setWeeklyAutoCalced(false); }
       if (monthlyAutoCalced) { setMonthlyVal(""); setMonthlyAutoCalced(false); }
       if (yearlyAutoCalced)  { setYearlyVal("");  setYearlyAutoCalced(false); }
     }
@@ -115,7 +121,7 @@ export default function GoalSettings() {
   function handleClear() {
     setDailyVal(""); setWeeklyVal(""); setMonthlyVal(""); setYearlyVal("");
     setDailyGoal(0); setWeeklyGoal(0); setMonthlyGoal(0); setYearlyGoal(0);
-    setMonthlyAutoCalced(false); setYearlyAutoCalced(false);
+    setWeeklyAutoCalced(false); setMonthlyAutoCalced(false); setYearlyAutoCalced(false);
     setSaved(false);
   }
 
@@ -125,7 +131,12 @@ export default function GoalSettings() {
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto px-5 py-2">
         <GoalRow label="하루"   value={dailyVal}   onChange={handleDailyChange} />
-        <GoalRow label="일주일" value={weeklyVal}  onChange={setWeeklyVal} />
+        <GoalRow
+          label="일주일"
+          value={weeklyVal}
+          onChange={(v) => { setWeeklyVal(v); setWeeklyAutoCalced(false); }}
+          hint={weeklyAutoCalced ? "자동 계산됨 (하루 × 6)" : undefined}
+        />
         <GoalRow
           label="한 달"
           value={monthlyVal}

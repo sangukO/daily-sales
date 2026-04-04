@@ -90,6 +90,15 @@ export default function SalesCalendar() {
 
   const { monthlyGoal, dailyGoal } = useGoalStore();
   const monthTotal = Object.values(salesMap).reduce((sum, s) => sum + s.amount, 0);
+
+  const today = new Date();
+  const isCurrentMonth =
+    month.getFullYear() === today.getFullYear() &&
+    month.getMonth() === today.getMonth();
+  const todaySale = salesMap[todayStr];
+  const fabLabel = todaySale
+    ? `✓ ${todaySale.amount >= 10000 ? `${Math.round(todaySale.amount / 10000)}만` : todaySale.amount.toLocaleString("ko-KR")}`
+    : "오늘 +";
   const salesDayCount = Object.keys(salesMap).length;
   const achievementRate = monthlyGoal > 0
     ? Math.min(Math.round((monthTotal / monthlyGoal) * 100), 999)
@@ -301,6 +310,19 @@ export default function SalesCalendar() {
           </div>
         </div>
       </div>
+
+      {/* 오늘 빠른 입력 FAB */}
+      {isCurrentMonth && (
+        <button
+          className="fixed bottom-20 right-4 z-40 bg-black text-white rounded-full px-4 py-3 text-sm font-black shadow-lg active:opacity-70 transition-opacity"
+          onClick={() => {
+            setDialogDate(today);
+            setHighlightedDate(today);
+          }}
+        >
+          {fabLabel}
+        </button>
+      )}
 
       {/* 매출 입력 다이얼로그 */}
       {dialogDate && (

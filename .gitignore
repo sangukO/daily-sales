@@ -40,6 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# pwa (빌드 시 자동 생성)
+/public/sw.js
+/public/swe-worker-*.js
+/public/workbox-*.js
+
 # local settings
 .claude/settings.local.json
 

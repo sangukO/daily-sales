@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { DayPicker } from "react-day-picker";
 import { ko } from "react-day-picker/locale";
 import "react-day-picker/style.css";
 import SalesDayDialog from "./SalesDayDialog";
-import { getSalesByMonth } from "@/lib/supabase/queries";
+import { getSalesByMonth, getSalesByYear } from "@/lib/supabase/queries";
 import type { Sale } from "@/types";
 
 // 이전 달 계산
@@ -22,23 +22,42 @@ export default function SalesCalendar() {
   const today = new Date();
   const [month, setMonth] = useState<Date>(today);
   const [salesMap, setSalesMap] = useState<Record<string, Sale>>({});
+  const [yearTotal, setYearTotal] = useState<number>(0);
   // dialogDate: 다이얼로그 마운트 제어 (애니메이션 끝까지 유지)
   const [dialogDate, setDialogDate] = useState<Date | null>(null);
   // highlightedDate: 셀 하이라이트 제어 (닫기 시작 즉시 해제)
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
 
-  const loadSales = useCallback(async () => {
-    try {
-      const sales = await getSalesByMonth(month.getFullYear(), month.getMonth() + 1);
-      const map: Record<string, Sale> = {};
-      sales.forEach((sale) => { map[sale.date] = sale; });
-      setSalesMap(map);
-    } catch {
-      // 로드 실패 시 빈 맵 유지
-    }
-  }, [month]);
+  // 매출 다시 불러오기 트리거 (다이얼로그 저장 후 증가)
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
-  useEffect(() => { loadSales(); }, [loadSales]);
+  useEffect(() => {
+    async function fetchSales() {
+      try {
+        const sales = await getSalesByMonth(month.getFullYear(), month.getMonth() + 1);
+        const map: Record<string, Sale> = {};
+        sales.forEach((sale) => { map[sale.date] = sale; });
+        setSalesMap(map);
+      } catch {
+        // 로드 실패 시 빈 맵 유지
+      }
+    }
+    void fetchSales();
+  }, [month, refreshKey]);
+
+  // 연도가 바뀔 때마다 연도 총합 재조회
+  const prevYear = useRef<number | null>(null);
+  useEffect(() => {
+    const year = month.getFullYear();
+    // 연도 변경 시 또는 저장 후에만 재조회
+    if (prevYear.current !== year || refreshKey > 0) {
+      prevYear.current = year;
+      getSalesByYear(year)
+        .then(setYearTotal)
+        .catch(() => {});
+    }
+  }, [month, refreshKey]);
 
   function toDateStr(date: Date): string {
     return date.toLocaleDateString("sv-SE");
@@ -63,6 +82,17 @@ export default function SalesCalendar() {
           <p className="mt-3 text-sm text-[#7A9BB5]">
             {salesDayCount > 0 ? `${salesDayCount}일 기록됨` : "이번 달 기록이 없어요"}
           </p>
+
+          {/* 연도 총합 */}
+          <div className="mt-4 pt-4 border-t border-[#2C3D50]">
+            <p className="text-xs font-medium tracking-widest text-[#7A9BB5] uppercase mb-1">
+              {month.getFullYear()}년 누적
+            </p>
+            <p className="text-2xl font-bold text-[#A8C5DA] leading-none">
+              {yearTotal.toLocaleString("ko-KR")}
+              <span className="ml-1 text-base font-normal text-[#7A9BB5]">원</span>
+            </p>
+          </div>
         </div>
 
         {/* ── 캘린더 카드 ── */}
@@ -103,7 +133,7 @@ export default function SalesCalendar() {
               onDayClick={(date) => { setDialogDate(date); setHighlightedDate(date); }}
               hideNavigation
               components={{
-                MonthCaption: () => null,
+                MonthCaption: () => <></>,
                 DayButton: ({ day, modifiers, ...props }) => {
                   const dateStr = toDateStr(day.date);
                   const sale = salesMap[dateStr];
@@ -179,7 +209,7 @@ export default function SalesCalendar() {
           existingSale={salesMap[toDateStr(dialogDate)] ?? null}
           onCloseStart={() => setHighlightedDate(null)} // 애니메이션 시작 즉시 셀 색 복원
           onClose={() => setDialogDate(null)}           // 애니메이션 끝나면 언마운트
-          onSaved={loadSales}
+          onSaved={refresh}
         />
       )}
     </>

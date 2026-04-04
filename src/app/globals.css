@@ -1,52 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cream-bg: #FAF7F0;
+  --ink: #1C1208;
+  --ink-2: #6B5444;
+  --ink-3: #9E8E7A;
+  --ink-4: #C8BAA8;
+  --border: #DDD3C2;
+  --divider: #EDE5D8;
+  --amber: #B5732A;
+  --amber-hover: #9A6023;
+  --amber-light: #FDF3E1;
+  --amber-border: #E8C98A;
+  --sage: #4A7040;
+  --sage-light: #EBF3E6;
+  --error: #8B3030;
+  --error-light: #FBEAEA;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-display: var(--font-playfair), Georgia, "Times New Roman", serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-background: var(--cream-bg);
+  --color-foreground: var(--ink);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cream-bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* react-day-picker: fit-content 해제 → 부모 너비에 맞게 풀 너비 확장 */
+/* react-day-picker 풀 너비 강제 */
 .rdp-months {
   width: 100% !important;
   max-width: 100% !important;
 }
-
 .rdp-month {
   width: 100% !important;
 }
-
-/* 테이블 풀 너비 + 고정 레이아웃으로 7등분 */
 .rdp-month_grid {
   width: 100% !important;
   table-layout: fixed !important;
 }
-
-/* 날짜 td 고정 너비 해제 */
 .rdp-day {
   width: auto !important;
 }
-
-/* 날짜 버튼 셀 가득 채우기 */
 .rdp-day_button {
   width: 100% !important;
   max-width: 100% !important;

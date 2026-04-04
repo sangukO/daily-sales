@@ -1,6 +1,14 @@
 import { createClient } from "./client";
 import type { Sale, SaleInput } from "@/types";
 
+// ── 목표 설정 타입 ──────────────────────────────────────────
+export interface GoalSettings {
+  dailyGoal: number;
+  weeklyGoal: number;
+  monthlyGoal: number;
+  yearlyGoal: number;
+}
+
 // 월별 매출 조회
 export async function getSalesByMonth(year: number, month: number): Promise<Sale[]> {
   const supabase = createClient();
@@ -55,18 +63,74 @@ export async function getSalesByRange(startDate: string, endDate: string): Promi
 // 매출 저장 (신규 생성 또는 수정)
 export async function upsertSale(sale: SaleInput & { id?: string }): Promise<Sale> {
   const supabase = createClient();
-
-  // RLS 정책(auth.uid() = user_id) 충족을 위해 현재 유저 id 포함
   const { data: { user } } = await supabase.auth.getUser();
 
+  if (sale.id) {
+    // 기존 레코드 수정: id는 조건에만 사용하고 payload에서 제외
+    const { id, ...payload } = sale;
+    const { data, error } = await supabase
+      .from("sales")
+      .update({ ...payload, user_id: user?.id })
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } else {
+    const { data, error } = await supabase
+      .from("sales")
+      .insert({ ...sale, user_id: user?.id })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+}
+
+// ── 목표 설정 조회 ──────────────────────────────────────────
+export async function getGoalSettings(): Promise<GoalSettings | null> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
   const { data, error } = await supabase
-    .from("sales")
-    .upsert({ ...sale, user_id: user?.id })
-    .select()
+    .from("user_settings")
+    .select("daily_goal, weekly_goal, monthly_goal, yearly_goal")
+    .eq("user_id", user.id)
     .single();
 
+  if (error) {
+    // 행이 없는 경우(PGRST116)는 null 반환, 그 외 에러는 throw
+    if (error.code === "PGRST116") return null;
+    throw error;
+  }
+
+  return {
+    dailyGoal: data.daily_goal,
+    weeklyGoal: data.weekly_goal,
+    monthlyGoal: data.monthly_goal,
+    yearlyGoal: data.yearly_goal,
+  };
+}
+
+// ── 목표 설정 저장 ──────────────────────────────────────────
+export async function upsertGoalSettings(settings: GoalSettings): Promise<void> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("로그인이 필요합니다.");
+
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert({
+      user_id: user.id,
+      daily_goal: settings.dailyGoal,
+      weekly_goal: settings.weeklyGoal,
+      monthly_goal: settings.monthlyGoal,
+      yearly_goal: settings.yearlyGoal,
+      updated_at: new Date().toISOString(),
+    });
+
   if (error) throw error;
-  return data;
 }
 
 // 매출 삭제

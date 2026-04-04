@@ -119,6 +119,34 @@ Claude Code는 이 파일을 기준으로 **별도 지시 없이** 다음 순서
 
 ---
 
+## 버그 & 개선 사항
+
+### 🎨 디자인 / UX
+
+| 우선순위 | 컴포넌트 | 내용 |
+|---|---|---|
+| 높음 | `CurrencyInput.tsx` | input 폰트 크기를 `text-base`(16px) 이상으로 설정해야 iOS 자동 줌 방지 |
+| 높음 | `BottomNav.tsx` | iOS safe area 미지원 — `pb-[env(safe-area-inset-bottom)]` 적용 필요 (홈 인디케이터 겹침) |
+| 중간 | `SalesDayDialog.tsx` | 백드롭(배경) 클릭 시 다이얼로그 닫히지 않음 — 닫기 기능 추가 권장 |
+| 낮음 | 차트 3종 | Recharts 터치 이슈: 차트 바깥 터치 시 첫 번째 데이터가 선택됨 — 라이브러리 제한으로 근본 해결 어려움 |
+
+### 🔧 로직
+
+| 우선순위 | 파일 | 내용 |
+|---|---|---|
+| 높음 | `SalesCalendar.tsx` | Race condition: 빠르게 월 이동 시 이전 달 응답이 늦게 도착해 데이터가 덮어써질 수 있음 → cleanup flag 필요 |
+| 높음 | 차트·캘린더 전반 | 에러 처리 누락: 모든 `catch { /* 무시 */ }` 블록에 최소한의 사용자 피드백(토스트 등) 추가 권장 |
+| 중간 | `SalesDayDialog.tsx` | `document.body.style.overflow` 복원 시 원래 값 미저장 — `const orig = document.body.style.overflow` 후 복원 필요 |
+| 낮음 | 여러 파일 | `toDateStr()` 함수가 `SalesCalendar.tsx`, `ChartWeekly.tsx`에서 중복 정의 → `lib/utils.ts`에 통합 권장 |
+
+### 📦 미완료 기능
+
+- [ ] 데이터 백업 및 복원 (JSON 내보내기 / 가져오기)
+  - 설정 페이지에 "내보내기" 버튼 → 전체 매출 데이터를 JSON 파일로 다운로드
+  - "가져오기" 버튼 → JSON 파일 선택 후 Supabase에 upsert
+
+---
+
 ## 자주 시키는 작업
 
 - 새 페이지 / 컴포넌트 생성

@@ -5,6 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { getSalesByMonth } from "@/lib/supabase/queries";
+import { useGoalStore } from "@/store/goalStore";
 
 function prevMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth() - 1, 1);
@@ -23,9 +24,9 @@ function CustomTooltip({ active, payload, label }: {
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl bg-[#1C1208] px-3 py-2 shadow-lg">
-      <p className="text-xs text-[#9E8E7A]">{label}일</p>
-      <p className="font-(family-name:--font-playfair) text-sm font-semibold text-white">
+    <div className="bg-black px-3 py-2">
+      <p className="text-sm text-white/60">{label}일</p>
+      <p className="text-base font-black text-white tabular-nums">
         {payload[0].value.toLocaleString("ko-KR")}원
       </p>
     </div>
@@ -34,11 +35,18 @@ function CustomTooltip({ active, payload, label }: {
 
 interface ChartMonthlyProps { compact?: boolean; }
 
+const MONTHS_KO = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+
 export default function ChartMonthly({ compact = false }: ChartMonthlyProps) {
   const today = new Date();
   const [month, setMonth] = useState<Date>(today);
   const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [monthTotal, setMonthTotal] = useState(0);
+
+  const { monthlyGoal } = useGoalStore();
+  const rate = monthlyGoal > 0
+    ? Math.min(Math.round((monthTotal / monthlyGoal) * 100), 999)
+    : null;
 
   useEffect(() => {
     async function fetchData() {
@@ -50,14 +58,11 @@ export default function ChartMonthly({ compact = false }: ChartMonthlyProps) {
         for (let d = 1; d <= days; d++) dataMap[d] = 0;
         const sales = await getSalesByMonth(year, mon);
         sales.forEach((sale) => {
-          const day = new Date(sale.date).getDate();
-          dataMap[day] = sale.amount;
+          dataMap[new Date(sale.date).getDate()] = sale.amount;
         });
         setChartData(Object.entries(dataMap).map(([d, amount]) => ({ day: Number(d), amount })));
         setMonthTotal(sales.reduce((sum, s) => sum + s.amount, 0));
-      } catch {
-        // 로드 실패 시 빈 데이터 유지
-      }
+      } catch { /* 오류 무시 */ }
     }
     void fetchData();
   }, [month]);
@@ -65,74 +70,66 @@ export default function ChartMonthly({ compact = false }: ChartMonthlyProps) {
   const salesDayCount = chartData.filter((d) => d.amount > 0).length;
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0]">
-
-      {/* ── 헤더 ── */}
-      <div className={`px-6 pb-6 ${compact ? "pt-5" : "pt-14"}`}>
-        <p className="text-xs font-semibold tracking-[0.2em] text-[#9E8E7A] uppercase mb-3">
-          {month.getFullYear()}년 {month.getMonth() + 1}월
-        </p>
-        <div className="mb-1">
-          <span className="font-(family-name:--font-playfair) text-4xl font-bold leading-none text-[#1C1208]">
-            {monthTotal.toLocaleString("ko-KR")}
+    <div className="flex flex-col bg-white h-full">
+      {/* 헤더 */}
+      <div className={`shrink-0 border-b-2 border-(--gray-5) px-5 pb-4 ${compact ? "pt-4" : "pt-12"}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMonth(prevMonth(month))}
+              className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">‹</button>
+            <h2 className="text-3xl font-black text-black">
+              {month.getFullYear()}년 {MONTHS_KO[month.getMonth()]}
+            </h2>
+            <button onClick={() => setMonth(nextMonth(month))}
+              className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">›</button>
+          </div>
+          <span className="text-sm font-bold text-(--gray-3)">
+            {salesDayCount > 0 ? `${salesDayCount}일 기록` : "기록 없음"}
           </span>
-          <span className="ml-2 text-base font-medium text-[#9E8E7A]">원</span>
         </div>
-        <p className="text-sm text-[#9E8E7A]">
-          {salesDayCount > 0 ? `${salesDayCount}일 기록됨` : "이번 달 기록이 없어요"}
-        </p>
-      </div>
-
-      <div className="mx-6 border-t border-[#DDD3C2]" />
-
-      {/* ── 차트 ── */}
-      <div className="mx-4 mt-4 rounded-2xl bg-white shadow-sm shadow-black/5 overflow-hidden">
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <button
-            onClick={() => setMonth(prevMonth(month))}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#9E8E7A] hover:bg-[#EDE5D8] transition-colors active:scale-95"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          </button>
-          <span className="text-sm font-semibold text-[#1C1208]">
-            {month.getFullYear()}.{String(month.getMonth() + 1).padStart(2, "0")} 일별 매출
-          </span>
-          <button
-            onClick={() => setMonth(nextMonth(month))}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#9E8E7A] hover:bg-[#EDE5D8] transition-colors active:scale-95"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          </button>
+        <div className="flex items-baseline gap-2 mb-3">
+          <span className="text-4xl font-black text-black tabular-nums">{monthTotal.toLocaleString("ko-KR")}</span>
+          <span className="text-xl font-bold text-(--gray-2)">원</span>
         </div>
-
-        <div className="px-2 pb-6 pt-2">
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barSize={6}>
-                <CartesianGrid vertical={false} stroke="#EDE5D8" />
-                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#C8BAA8" }} tickLine={false} axisLine={false} interval={4} />
-                <YAxis tick={{ fontSize: 10, fill: "#C8BAA8" }} tickLine={false} axisLine={false}
-                  tickFormatter={(v: number) => v >= 10000 ? `${Math.round(v / 10000)}만` : v > 0 ? String(v) : ""}
-                  width={36} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: "#FDF3E1" }} />
-                <Bar dataKey="amount" fill="#B5732A" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex h-56 items-center justify-center text-sm text-[#C8BAA8]">
-              데이터를 불러오는 중...
+        {rate !== null && (
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-sm font-bold text-(--gray-3)">목표 달성률</span>
+              <span className="text-sm font-black text-black">{rate}%</span>
             </div>
-          )}
-        </div>
+            <div className="h-3 bg-(--gray-5) rounded-none">
+              <div className="h-full bg-black transition-all duration-700"
+                style={{ width: `${Math.min(rate, 100)}%` }} />
+            </div>
+          </div>
+        )}
       </div>
 
-      <p className="mt-4 mb-6 text-center text-xs text-[#C8BAA8]">
-        막대를 탭하면 금액을 확인할 수 있어요
-      </p>
+      {/* 차트 */}
+      <div className="px-2 pt-3 pb-2"
+      >
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={240} minHeight={200}>
+            <BarChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barSize={6}>
+              <CartesianGrid vertical={false} stroke="#EEEEEE" />
+              <XAxis dataKey="day"
+                tick={{ fontSize: 11, fill: "#999", fontWeight: 700 }}
+                tickLine={false} axisLine={false} interval={4} />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#999", fontWeight: 700 }}
+                tickLine={false} axisLine={false}
+                tickFormatter={(v: number) => v >= 100000000 ? `${Math.round(v / 100000000)}억` : v >= 10000 ? `${Math.round(v / 10000)}만` : v > 0 ? String(v) : ""}
+                width={monthTotal >= 100000000 ? 56 : 46} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#F7F7F7" }} />
+              <Bar dataKey="amount" fill="#111111" radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-60 flex items-center justify-center text-lg font-bold text-(--gray-4)">
+            불러오는 중...
+          </div>
+        )}
+      </div>
     </div>
   );
 }

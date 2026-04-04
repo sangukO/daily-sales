@@ -19,17 +19,17 @@ export default function ChartPage() {
   return (
     <div>
       {/* 탭 바 */}
-      <div className="sticky top-0 z-10 bg-[#1C2B3A] px-4 pt-12 pb-0">
+      <div className="sticky top-0 z-10 bg-[#FAF7F0] border-b border-[#DDD3C2] px-4 pt-12">
         <div className="flex">
           {tabs.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
               className={[
-                "flex-1 py-3 text-sm font-semibold tracking-wide transition-colors",
+                "flex-1 pb-3 pt-1 text-sm font-semibold tracking-wide transition-colors",
                 activeTab === key
-                  ? "border-b-2 border-white text-white"
-                  : "border-b-2 border-transparent text-[#7A9BB5]",
+                  ? "border-b-2 border-[#B5732A] text-[#B5732A]"
+                  : "border-b-2 border-transparent text-[#C8BAA8] hover:text-[#9E8E7A]",
               ].join(" ")}
             >
               {label}

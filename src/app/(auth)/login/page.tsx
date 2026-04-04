@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-// 국내 전화번호를 E.164 형식으로 변환 (예: 01012345678 → +821012345678)
 function toE164(phone: string): string {
   const digits = phone.replace(/[^0-9]/g, "");
   if (digits.startsWith("0")) return "+82" + digits.slice(1);
@@ -19,127 +18,152 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSendOtp(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  // sms_autoconfirm=true 환경: signInWithOtp 성공 시 이미 세션이 생길 수 있음
+  // 그 경우 자동으로 dashboard로 이동
+  useEffect(() => {
+    const supabase = createClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" && session) {
+          router.push("/dashboard");
+        }
+      }
+    );
+    return () => subscription.unsubscribe();
+  }, [router]);
+
+  async function handleSendOtp() {
+    if (!phone.trim()) return;
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({ phone: toE164(phone) });
-    if (error) {
-      setError("인증번호 발송에 실패했습니다. 전화번호를 확인해주세요.");
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: toE164(phone),
+      });
+
+      if (error) {
+        setError(`오류: ${error.message}`);
+        return;
+      }
+
+      // 성공 → OTP 입력 단계
+      setStep("otp");
+    } catch (err) {
+      setError(`오류: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
       setLoading(false);
-      return;
     }
-    setStep("otp");
-    setLoading(false);
   }
 
-  async function handleVerifyOtp(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleVerifyOtp() {
+    if (otp.length < 6) return;
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      phone: toE164(phone),
-      token: otp,
-      type: "sms",
-    });
-    if (error) {
-      setError("인증번호가 올바르지 않습니다.");
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.verifyOtp({
+        phone: toE164(phone),
+        token: otp,
+        type: "sms",
+      });
+
+      if (error) {
+        setError(`오류: ${error.message}`);
+        return;
+      }
+
+      router.push("/dashboard");
+    } catch (err) {
+      setError(`오류: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
       setLoading(false);
-      return;
     }
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#FAF7F0] px-6">
-      <div className="w-full max-w-sm">
+    <main className="min-h-screen bg-white flex flex-col justify-center px-6">
+      <div className="w-full max-w-sm mx-auto">
 
         {/* 헤더 */}
-        <div className="mb-10 text-center">
-          <p className="text-xs font-semibold tracking-[0.25em] text-[#9E8E7A] uppercase mb-3">
-            Daily Sales
-          </p>
-          <h1 className="font-(family-name:--font-playfair) text-4xl font-bold text-[#1C1208] leading-tight">
-            매출 관리
-          </h1>
-          <div className="mt-4 mx-auto w-8 h-px bg-[#DDD3C2]" />
-          <p className="mt-4 text-sm text-[#9E8E7A]">
+        <div className="mb-10 border-b-4 border-black pb-6">
+          <p className="text-base font-bold text-(--gray-3) mb-2">매출 관리 앱</p>
+          <h1 className="text-5xl font-black text-black leading-tight mb-3">로그인</h1>
+          <p className="text-lg font-semibold text-(--gray-2)">
             {step === "phone"
-              ? "전화번호로 로그인하세요"
-              : `${phone}으로 발송된\n인증번호를 입력하세요`}
+              ? "전화번호를 입력하세요"
+              : `인증번호를 입력하세요`}
           </p>
         </div>
 
-        {/* Step 1 — 전화번호 입력 */}
+        {/* 오류 메시지 */}
+        {error && (
+          <div className="mb-6 p-4 bg-(--red-bg) border-l-4 border-(--cal-sun)">
+            <p className="text-base font-bold text-(--cal-sun) break-all">{error}</p>
+          </div>
+        )}
+
+        {/* ── 전화번호 입력 단계 ── */}
         {step === "phone" && (
-          <form onSubmit={handleSendOtp} className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label htmlFor="phone" className="block text-xs font-semibold tracking-widest text-[#9E8E7A] uppercase mb-2">
+              <label className="block text-lg font-black text-black mb-3">
                 전화번호
               </label>
               <input
-                id="phone"
                 type="tel"
                 inputMode="numeric"
                 autoComplete="tel"
-                required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
                 placeholder="01012345678"
-                className="w-full rounded-xl border border-[#DDD3C2] bg-white px-4 py-3.5 text-[#1C1208] placeholder-[#C8BAA8] focus:border-[#B5732A] focus:outline-none transition-colors"
+                className="w-full border-2 border-(--gray-4) bg-white px-4 py-4 text-2xl font-bold text-black placeholder-(--gray-4) focus:outline-none focus:border-black transition-colors"
               />
             </div>
 
-            {error && (
-              <p className="rounded-xl bg-[#FBEAEA] px-4 py-3 text-sm text-[#8B3030]">
-                {error}
-              </p>
-            )}
-
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-[#B5732A] px-4 py-3.5 text-sm font-bold text-white hover:bg-[#9A6023] transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              disabled={loading || !phone.trim()}
+              onClick={handleSendOtp}
+              className="w-full bg-black py-5 text-xl font-black text-white active:opacity-70 disabled:opacity-50 transition-opacity"
             >
               {loading ? "발송 중..." : "인증번호 받기"}
             </button>
-          </form>
+          </div>
         )}
 
-        {/* Step 2 — OTP 입력 */}
+        {/* ── 인증번호 입력 단계 ── */}
         {step === "otp" && (
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
+          <div className="space-y-6">
             <div>
-              <label htmlFor="otp" className="block text-xs font-semibold tracking-widest text-[#9E8E7A] uppercase mb-2">
+              <label className="block text-lg font-black text-black mb-3">
                 인증번호 6자리
               </label>
               <input
-                id="otp"
                 type="text"
                 inputMode="numeric"
                 autoComplete="one-time-code"
-                required
                 maxLength={6}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
+                onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
                 placeholder="000000"
-                className="w-full rounded-xl border border-[#DDD3C2] bg-white px-4 py-3.5 text-center font-(family-name:--font-playfair) text-3xl font-bold tracking-[0.3em] text-[#1C1208] placeholder-[#C8BAA8] focus:border-[#B5732A] focus:outline-none transition-colors"
+                autoFocus
+                className="w-full border-2 border-(--gray-4) bg-white px-4 py-4 text-center text-4xl font-black tracking-[0.5em] text-black placeholder-(--gray-4) focus:outline-none focus:border-black transition-colors"
               />
+              <p className="mt-3 text-sm font-semibold text-(--gray-3)">
+                {phone}로 발송된 6자리 숫자를 입력하세요
+              </p>
             </div>
 
-            {error && (
-              <p className="rounded-xl bg-[#FBEAEA] px-4 py-3 text-sm text-[#8B3030]">
-                {error}
-              </p>
-            )}
-
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-[#B5732A] px-4 py-3.5 text-sm font-bold text-white hover:bg-[#9A6023] transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              disabled={loading || otp.length < 6}
+              onClick={handleVerifyOtp}
+              className="w-full bg-black py-5 text-xl font-black text-white active:opacity-70 disabled:opacity-50 transition-opacity"
             >
               {loading ? "확인 중..." : "로그인"}
             </button>
@@ -147,11 +171,11 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => { setStep("phone"); setError(null); setOtp(""); }}
-              className="w-full py-2 text-sm text-[#9E8E7A] hover:text-[#6B5444] transition-colors"
+              className="w-full py-3 text-base font-bold text-(--gray-3) active:text-black transition-colors"
             >
-              전화번호 다시 입력
+              ← 전화번호 다시 입력
             </button>
-          </form>
+          </div>
         )}
       </div>
     </main>

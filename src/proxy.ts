@@ -35,10 +35,19 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const isLoginPage = request.nextUrl.pathname.startsWith("/login");
+
   // 미인증 사용자가 보호된 라우트 접근 시 로그인 페이지로 리다이렉트
-  if (!user && !request.nextUrl.pathname.startsWith("/login")) {
+  if (!user && !isLoginPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // 인증된 사용자가 로그인 페이지 접근 시 대시보드로 리다이렉트
+  if (user && isLoginPage) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 

@@ -19,16 +19,16 @@ export default function CurrencyInput({
   }
 
   return (
-    <div className="relative">
+    <div className="relative border-2 border-black flex items-center">
       <input
         type="text"
         inputMode="numeric"
         value={formatted}
         onChange={handleChange}
         placeholder={placeholder}
-        className="w-full rounded-xl border border-[#DDD3C2] bg-white px-4 py-3.5 pr-10 text-right font-(family-name:--font-playfair) text-2xl font-semibold text-[#1C1208] placeholder-[#C8BAA8] focus:border-[#B5732A] focus:outline-none transition-colors"
+        className="w-full bg-white px-4 py-4 pr-14 text-right text-4xl font-black text-black placeholder-(--gray-4) focus:outline-none tabular-nums"
       />
-      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#9E8E7A]">
+      <span className="absolute right-4 text-xl font-bold text-(--gray-2) pointer-events-none">
         원
       </span>
     </div>

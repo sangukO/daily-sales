@@ -140,13 +140,13 @@ export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
           <div>
             <div className="flex justify-between mb-1">
               <span className="text-sm font-bold text-(--gray-3)">주간 목표 달성률</span>
-              <span className={`text-sm font-black ${rate >= 100 ? "text-[var(--green)]" : "text-black"}`}>
+              <span className={`text-sm font-black ${rate >= 100 ? "text-(--green)" : "text-black"}`}>
                 {rate}%
               </span>
             </div>
             <div className="h-3 bg-(--gray-5)">
               <div
-                className={`h-full transition-all duration-700 ${rate >= 100 ? "bg-[var(--green)]" : "bg-black"}`}
+                className={`h-full transition-all duration-700 ${rate >= 100 ? "bg-(--green)" : "bg-black"}`}
                 style={{ width: `${Math.min(rate, 100)}%` }}
               />
             </div>

@@ -22,9 +22,9 @@ function nextMonth(date: Date): Date {
 
 // 요일 0=일, 6=토
 function getDayColor(dayOfWeek: number): string {
-  if (dayOfWeek === 0) return "text-[var(--cal-sun)]";
-  if (dayOfWeek === 6) return "text-[var(--cal-sat)]";
-  return "text-[var(--cal-weekday)]";
+  if (dayOfWeek === 0) return "text-(--cal-sun)";
+  if (dayOfWeek === 6) return "text-(--cal-sat)";
+  return "text-(--cal-weekday)";
 }
 
 const MONTHS_KO = [
@@ -167,16 +167,16 @@ export default function SalesCalendar() {
         {/* ── 상단 헤더 ── */}
         <div className="shrink-0 border-b-2 border-black">
           {/* 연도 + 월 제목 행 */}
-          <div className="flex items-center px-3 pt-10 pb-1 gap-2 border-b border-[var(--gray-4)]">
+          <div className="flex items-center px-3 pt-10 pb-1 gap-2 border-b border-(--gray-4)">
             <button
               onClick={() => setMonth(prevMonth(month))}
-              className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-[var(--gray-2)] active:bg-[var(--gray-5)] rounded"
+              className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-2) active:bg-(--gray-5) rounded"
               aria-label="이전 달"
             >
               ‹
             </button>
             <div className="flex-1 text-center">
-              <span className="text-sm text-[var(--gray-3)] font-medium">
+              <span className="text-sm text-(--gray-3) font-medium">
                 {month.getFullYear()}년
               </span>
               <h1 className="text-5xl font-black text-black leading-none tracking-tight">
@@ -185,7 +185,7 @@ export default function SalesCalendar() {
             </div>
             <button
               onClick={() => setMonth(nextMonth(month))}
-              className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-[var(--gray-2)] active:bg-[var(--gray-5)] rounded"
+              className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-2) active:bg-(--gray-5) rounded"
               aria-label="다음 달"
             >
               ›
@@ -195,7 +195,7 @@ export default function SalesCalendar() {
           {/* 월 매출 요약 행 */}
           <div className="flex items-center px-4 py-2 gap-3">
             <div className="flex-1">
-              <p className="text-xs text-[var(--gray-3)] font-medium mb-0.5">
+              <p className="text-xs text-(--gray-3) font-medium mb-0.5">
                 이달 총매출{" "}
                 {salesDayCount > 0 ? `(${salesDayCount}일 기록)` : ""}
               </p>
@@ -203,7 +203,7 @@ export default function SalesCalendar() {
                 <span className="text-3xl font-black text-black tabular-nums leading-none">
                   {monthTotal.toLocaleString("ko-KR")}
                 </span>
-                <span className="text-base font-bold text-[var(--gray-2)]">
+                <span className="text-base font-bold text-(--gray-2)">
                   원
                 </span>
               </div>
@@ -212,9 +212,9 @@ export default function SalesCalendar() {
             {/* 목표 달성률 */}
             {achievementRate !== null && (
               <div className="text-right shrink-0">
-                <p className="text-xs text-[var(--gray-3)] mb-0.5">월 목표</p>
+                <p className="text-xs text-(--gray-3) mb-0.5">월 목표</p>
                 <p
-                  className={`text-2xl font-black tabular-nums leading-none ${achievementRate >= 100 ? "text-[var(--green)]" : "text-black"}`}
+                  className={`text-2xl font-black tabular-nums leading-none ${achievementRate >= 100 ? "text-(--green)" : "text-black"}`}
                 >
                   {achievementRate}%
                 </p>
@@ -224,37 +224,37 @@ export default function SalesCalendar() {
 
           {/* 목표 진행 바 */}
           {achievementRate !== null && (
-            <div className="h-2 bg-[var(--gray-5)] mx-0">
+            <div className="h-2 bg-(--gray-5) mx-0">
               <div
-                className={`h-full transition-all duration-700 ${achievementRate >= 100 ? "bg-[var(--green)]" : "bg-black"}`}
+                className={`h-full transition-all duration-700 ${achievementRate >= 100 ? "bg-(--green)" : "bg-black"}`}
                 style={{ width: `${Math.min(achievementRate, 100)}%` }}
               />
             </div>
           )}
 
           {/* 이번 주 소계 */}
-          <div className="flex items-center justify-between px-4 py-1.5 bg-[var(--gray-6)] border-t border-[var(--gray-5)]">
-            <span className="text-sm font-semibold text-[var(--gray-2)]">
+          <div className="flex items-center justify-between px-4 py-1.5 bg-(--gray-6) border-t border-(--gray-5)">
+            <span className="text-sm font-semibold text-(--gray-2)">
               이번 주
             </span>
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-black text-black tabular-nums">
                 {weekTotal.toLocaleString("ko-KR")}
               </span>
-              <span className="text-sm font-bold text-[var(--gray-2)]">원</span>
+              <span className="text-sm font-bold text-(--gray-2)">원</span>
             </div>
           </div>
 
           {/* 연간 누적 */}
-          <div className="flex items-center justify-between px-4 py-1.5 bg-[var(--gray-6)] border-t border-[var(--gray-5)]">
-            <span className="text-sm font-semibold text-[var(--gray-2)]">
+          <div className="flex items-center justify-between px-4 py-1.5 bg-(--gray-6) border-t border-(--gray-5)">
+            <span className="text-sm font-semibold text-(--gray-2)">
               {month.getFullYear()}년 누적
             </span>
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-black text-black tabular-nums">
                 {yearTotal.toLocaleString("ko-KR")}
               </span>
-              <span className="text-sm font-bold text-[var(--gray-2)]">원</span>
+              <span className="text-sm font-bold text-(--gray-2)">원</span>
             </div>
           </div>
         </div>
@@ -269,9 +269,9 @@ export default function SalesCalendar() {
                 className={[
                   "py-2 text-center text-base font-black",
                   i === 0
-                    ? "text-[var(--cal-sun)]"
+                    ? "text-(--cal-sun)"
                     : i === 6
-                      ? "text-[var(--cal-sat)]"
+                      ? "text-(--cal-sat)"
                       : "text-black",
                 ].join(" ")}
               >
@@ -306,7 +306,7 @@ export default function SalesCalendar() {
                   const isPastOrToday = dateStr <= todayStr;
 
                   // 배경색 결정
-                  let bgClass = "bg-white active:bg-[var(--gray-6)]";
+                  let bgClass = "bg-white active:bg-(--gray-6)";
                   if (isSelected) {
                     bgClass = "bg-black";
                   } else if (isToday) {
@@ -315,8 +315,8 @@ export default function SalesCalendar() {
                     if (dailyGoal > 0 && isPastOrToday) {
                       bgClass =
                         sale.amount >= dailyGoal
-                          ? "bg-[var(--green-bg)]"
-                          : "bg-[var(--red-bg)]";
+                          ? "bg-(--green-bg)"
+                          : "bg-(--red-bg)";
                     } else {
                       bgClass = "bg-[#F0F8FF]"; // 매출 있는 날 — 연한 파랑
                     }
@@ -325,7 +325,7 @@ export default function SalesCalendar() {
                   // 날짜 숫자 색상
                   let numColor = getDayColor(dayOfWeek);
                   if (isSelected) numColor = "text-white";
-                  else if (isOutside) numColor = "text-[var(--gray-4)]";
+                  else if (isOutside) numColor = "text-(--gray-4)";
 
                   // 금액 포맷 (짧게)
                   let amountStr = "";

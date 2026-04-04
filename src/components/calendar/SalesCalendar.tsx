@@ -6,6 +6,7 @@ import { ko } from "react-day-picker/locale";
 import "react-day-picker/style.css";
 import SalesDayDialog from "./SalesDayDialog";
 import { getSalesByMonth, getSalesByYear } from "@/lib/supabase/queries";
+import { useGoalStore } from "@/store/goalStore";
 import type { Sale } from "@/types";
 
 // 이전 달 계산
@@ -63,8 +64,11 @@ export default function SalesCalendar() {
     return date.toLocaleDateString("sv-SE");
   }
 
+  const { monthlyGoal } = useGoalStore();
   const monthTotal = Object.values(salesMap).reduce((sum, s) => sum + s.amount, 0);
   const salesDayCount = Object.keys(salesMap).length;
+  // 달성률 계산 (목표 미설정 시 null)
+  const achievementRate = monthlyGoal > 0 ? Math.min(Math.round((monthTotal / monthlyGoal) * 100), 999) : null;
 
   return (
     <>
@@ -82,6 +86,27 @@ export default function SalesCalendar() {
           <p className="mt-3 text-sm text-[#7A9BB5]">
             {salesDayCount > 0 ? `${salesDayCount}일 기록됨` : "이번 달 기록이 없어요"}
           </p>
+
+          {/* 목표 달성률 */}
+          {achievementRate !== null && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-[#7A9BB5]">
+                  목표 {monthlyGoal.toLocaleString("ko-KR")}원
+                </span>
+                <span className={`text-xs font-bold ${achievementRate >= 100 ? "text-[#7DDBA5]" : "text-[#A8C5DA]"}`}>
+                  {achievementRate}%
+                </span>
+              </div>
+              {/* 프로그레스 바 — scaleX로 동적 너비 표현 (인라인 스타일 대체) */}
+              <div className="h-1.5 w-full rounded-full bg-[#2C3D50] overflow-hidden">
+                <div
+                  className={`h-full w-full origin-left rounded-full transition-transform duration-500 ${achievementRate >= 100 ? "bg-[#7DDBA5]" : "bg-[#4A90D9]"}`}
+                  style={{ transform: `scaleX(${Math.min(achievementRate, 100) / 100})` }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* 연도 총합 */}
           <div className="mt-4 pt-4 border-t border-[#2C3D50]">

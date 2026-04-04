@@ -1,162 +1,63 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-// 국내 전화번호를 E.164 형식으로 변환 (예: 01012345678 → +821012345678)
-function toE164(phone: string): string {
-  const digits = phone.replace(/[^0-9]/g, "");
-  if (digits.startsWith("0")) {
-    return "+82" + digits.slice(1);
-  }
-  // 이미 국가코드 포함된 경우
-  return "+" + digits;
-}
-
 export default function LoginPage() {
-  const router = useRouter();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Step 1: 전화번호 입력 → OTP 발송
-  async function handleSendOtp(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleKakaoLogin() {
     setLoading(true);
     setError(null);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: toE164(phone),
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "kakao",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
 
     if (error) {
-      setError("인증번호 발송에 실패했습니다. 전화번호를 확인해주세요.");
+      setError("카카오 로그인에 실패했습니다. 다시 시도해주세요.");
       setLoading(false);
-      return;
     }
-
-    setStep("otp");
-    setLoading(false);
-  }
-
-  // Step 2: OTP 입력 → 로그인 완료
-  async function handleVerifyOtp(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      phone: toE164(phone),
-      token: otp,
-      type: "sms",
-    });
-
-    if (error) {
-      setError("인증번호가 올바르지 않습니다.");
-      setLoading(false);
-      return;
-    }
-
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#F5F3EE] px-4">
       <div className="w-full max-w-sm">
         {/* 헤더 */}
-        <div className="mb-8 text-center">
+        <div className="mb-10 text-center">
           <h1 className="text-2xl font-bold text-[#1C2B3A]">매출 관리</h1>
-          <p className="mt-1 text-sm text-[#7A9BB5]">
-            {step === "phone" ? "전화번호로 로그인하세요" : `${phone}로 발송된 인증번호를 입력하세요`}
-          </p>
+          <p className="mt-1 text-sm text-[#7A9BB5]">로그인하여 시작하세요</p>
         </div>
 
-        {/* Step 1 — 전화번호 입력 */}
-        {step === "phone" && (
-          <form onSubmit={handleSendOtp} className="space-y-4">
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-[#1C2B3A] mb-1">
-                전화번호
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel"
-                required
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="01012345678"
-                className="w-full rounded-xl border border-[#E8E4DC] bg-white px-4 py-3 text-[#1C2B3A] placeholder-[#C5BEB4] focus:border-[#1C2B3A] focus:outline-none transition-colors"
-              />
-            </div>
-
-            {error && (
-              <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-[#1C2B3A] px-4 py-3 text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "발송 중..." : "인증번호 받기"}
-            </button>
-          </form>
+        {/* 에러 메시지 */}
+        {error && (
+          <p className="mb-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </p>
         )}
 
-        {/* Step 2 — OTP 입력 */}
-        {step === "otp" && (
-          <form onSubmit={handleVerifyOtp} className="space-y-4">
-            <div>
-              <label htmlFor="otp" className="block text-sm font-medium text-[#1C2B3A] mb-1">
-                인증번호 6자리
-              </label>
-              <input
-                id="otp"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                required
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
-                placeholder="000000"
-                className="w-full rounded-xl border border-[#E8E4DC] bg-white px-4 py-3 text-center text-2xl font-bold tracking-widest text-[#1C2B3A] placeholder-[#C5BEB4] focus:border-[#1C2B3A] focus:outline-none transition-colors"
-              />
-            </div>
-
-            {error && (
-              <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-[#1C2B3A] px-4 py-3 text-sm font-bold text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? "확인 중..." : "로그인"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => { setStep("phone"); setError(null); setOtp(""); }}
-              className="w-full rounded-xl py-2 text-sm text-[#7A9BB5] transition-colors hover:text-[#1C2B3A]"
-            >
-              전화번호 다시 입력
-            </button>
-          </form>
-        )}
+        {/* 카카오 로그인 버튼 */}
+        <button
+          onClick={handleKakaoLogin}
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-3 rounded-xl bg-[#FEE500] px-4 py-4 text-sm font-bold text-[#191919] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {/* 카카오 로고 */}
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M10 2C5.582 2 2 4.925 2 8.5c0 2.275 1.484 4.274 3.726 5.435L4.9 17.1a.25.25 0 00.364.283L9.1 15.01c.297.026.598.04.9.04 4.418 0 8-2.925 8-6.55C18 4.925 14.418 2 10 2z"
+              fill="#191919"
+            />
+          </svg>
+          {loading ? "로그인 중..." : "카카오로 로그인"}
+        </button>
       </div>
     </main>
   );

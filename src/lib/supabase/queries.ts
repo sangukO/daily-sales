@@ -54,9 +54,12 @@ export async function getSalesByRange(startDate: string, endDate: string): Promi
 export async function upsertSale(sale: SaleInput & { id?: string }): Promise<Sale> {
   const supabase = createClient();
 
+  // RLS 정책(auth.uid() = user_id) 충족을 위해 현재 유저 id 포함
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data, error } = await supabase
     .from("sales")
-    .upsert(sale)
+    .upsert({ ...sale, user_id: user?.id })
     .select()
     .single();
 

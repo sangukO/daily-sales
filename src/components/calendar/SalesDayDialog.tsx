@@ -32,23 +32,19 @@ export default function SalesDayDialog({
   }, []);
 
   useEffect(() => {
+    const orig = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = ""; };
+    return () => { document.body.style.overflow = orig; };
   }, []);
 
   function handleClose() {
     onCloseStart();
     setVisible(false);
-    setTimeout(onClose, 300);
+    setTimeout(onClose, 280);
   }
 
-  const dateStr = date.toLocaleDateString("sv-SE");
-  const displayDate = date.toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "short",
-  });
+  const DAY_NAMES = ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
+  const displayDate = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${DAY_NAMES[date.getDay()]}`;
 
   async function handleSave() {
     if (amount <= 0) { setError("금액을 입력해주세요."); return; }
@@ -57,7 +53,7 @@ export default function SalesDayDialog({
     try {
       await upsertSale({
         ...(existingSale?.id ? { id: existingSale.id } : {}),
-        date: dateStr,
+        date: date.toLocaleDateString("sv-SE"),
         amount,
         memo: memo.trim() || null,
       });
@@ -87,67 +83,65 @@ export default function SalesDayDialog({
 
   return (
     <div
-      className={`fixed inset-0 z-60 flex items-end justify-center bg-black/30 transition-opacity duration-300 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
+      className={`fixed inset-0 z-60 flex items-end justify-center transition-opacity duration-280 ${visible ? "opacity-100" : "opacity-0"}`}
+      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
       onClick={handleClose}
     >
       <div
-        className={`w-full max-w-lg bg-[#FAF7F0] rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
-          visible ? "translate-y-0" : "translate-y-full"
-        }`}
+        className={`w-full max-w-lg bg-white border-t-4 border-black transition-transform duration-280 ease-out ${visible ? "translate-y-0" : "translate-y-full"}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 핸들 바 */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="h-1 w-10 rounded-full bg-[#DDD3C2]" />
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-5 py-4 border-b-2 border-black">
+          <div>
+            <p className="text-xs text-(--gray-3) font-semibold mb-0.5">매출 기록</p>
+            <p className="text-lg font-black text-black">{displayDate}</p>
+          </div>
+          <button
+            onClick={handleClose}
+            className="w-11 h-11 flex items-center justify-center text-3xl font-light text-(--gray-3) active:bg-(--gray-5) rounded"
+          >
+            ×
+          </button>
         </div>
 
-        <div className="px-6 pb-10 pt-3">
-          {/* 날짜 */}
-          <p className="mb-1 text-xs font-semibold tracking-widest text-[#9E8E7A] uppercase">
-            매출 기록
-          </p>
-          <p className="mb-6 font-(family-name:--font-playfair) text-xl font-semibold text-[#1C1208]">
-            {displayDate}
-          </p>
-
+        <div className="px-5 pb-8 pt-5 space-y-6">
           {/* 금액 입력 */}
-          <div className="mb-4">
-            <label className="mb-2 block text-xs font-semibold tracking-widest text-[#9E8E7A] uppercase">
+          <div>
+            <label className="block text-base font-black text-black mb-3">
               매출액
             </label>
             <CurrencyInput value={amount} onChange={setAmount} placeholder="0" />
           </div>
 
-          {/* 메모 입력 */}
-          <div className="mb-6">
-            <label className="mb-2 block text-xs font-semibold tracking-widest text-[#9E8E7A] uppercase">
-              메모 <span className="normal-case font-normal text-[#C8BAA8]">(선택)</span>
+          {/* 메모 */}
+          <div>
+            <label className="block text-base font-black text-black mb-3">
+              메모 <span className="text-sm font-normal text-(--gray-3)">(선택사항)</span>
             </label>
             <textarea
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
-              placeholder="메모를 입력하세요"
+              placeholder="간단한 메모를 입력하세요"
               rows={2}
-              className="w-full resize-none rounded-xl border border-[#DDD3C2] bg-white px-4 py-3 text-sm text-[#1C1208] placeholder-[#C8BAA8] focus:border-[#B5732A] focus:outline-none transition-colors"
+              className="w-full resize-none border-2 border-(--gray-4) rounded-none bg-white px-4 py-3 text-lg text-black placeholder-(--gray-4) focus:outline-none focus:border-black transition-colors"
             />
           </div>
 
-          {/* 에러 */}
+          {/* 오류 */}
           {error && (
-            <p className="mb-4 rounded-xl bg-[#FBEAEA] px-4 py-2 text-sm text-[#8B3030]">
+            <p className="text-base font-bold text-(--cal-sun) border-l-4 border-(--cal-sun) pl-4">
               {error}
             </p>
           )}
 
           {/* 버튼 */}
-          <div className="flex gap-2">
+          <div className="flex gap-3 pt-1">
             {existingSale && (
               <button
                 onClick={handleDelete}
                 disabled={loading}
-                className="rounded-xl border border-[#DDD3C2] px-4 py-3 text-sm font-semibold text-[#8B3030] hover:bg-[#FBEAEA] disabled:opacity-50 transition-colors"
+                className="border-2 border-black px-5 py-4 text-base font-black text-black active:bg-(--gray-5) disabled:opacity-40 transition-colors"
               >
                 삭제
               </button>
@@ -155,9 +149,9 @@ export default function SalesDayDialog({
             <button
               onClick={handleSave}
               disabled={loading}
-              className="flex-1 rounded-xl bg-[#B5732A] py-3 text-sm font-bold text-white hover:bg-[#9A6023] disabled:opacity-50 transition-colors active:scale-95"
+              className="flex-1 bg-black py-4 text-lg font-black text-white active:opacity-70 disabled:opacity-40 transition-opacity"
             >
-              {loading ? "저장 중..." : "저장"}
+              {loading ? "저장 중..." : "저장하기"}
             </button>
           </div>
         </div>

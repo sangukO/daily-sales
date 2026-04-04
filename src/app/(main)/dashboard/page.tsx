@@ -2,7 +2,7 @@ import SalesCalendar from "@/components/calendar/SalesCalendar";
 
 export default function DashboardPage() {
   return (
-    <main>
+    <main className="h-full">
       <SalesCalendar />
     </main>
   );

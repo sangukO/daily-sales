@@ -6,9 +6,8 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col">
-      {/* 하단 네비게이션 높이만큼 콘텐츠 영역에 패딩 확보 */}
-      <div className="flex-1 pb-16">{children}</div>
+    <div className="h-screen overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))]">{children}</div>
       <BottomNav />
     </div>
   );

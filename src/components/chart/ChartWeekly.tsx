@@ -5,10 +5,12 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import { getSalesByRange } from "@/lib/supabase/queries";
+import { useGoalStore } from "@/store/goalStore";
 
 function toDateStr(date: Date): string {
   return date.toLocaleDateString("sv-SE");
 }
+
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
   const day = d.getDay();
@@ -18,119 +20,164 @@ function getWeekStart(date: Date): Date {
   return d;
 }
 
-interface WeekItem { label: string; amount: number; weekStart: string; }
-
-function buildWeeks(count: number): WeekItem[] {
-  const thisWeekStart = getWeekStart(new Date());
-  const weeks: WeekItem[] = [];
-  for (let i = count - 1; i >= 0; i--) {
-    const start = new Date(thisWeekStart);
-    start.setDate(start.getDate() - i * 7);
-    weeks.push({
-      label: `${start.getMonth() + 1}/${start.getDate()}`,
-      amount: 0,
-      weekStart: toDateStr(start),
-    });
-  }
-  return weeks;
+// 예: weekStart가 4월 27일(월)이면 → "4월 4주차"
+function getWeekLabel(weekStart: Date): string {
+  const month = weekStart.getMonth() + 1;
+  const weekNum = Math.ceil(weekStart.getDate() / 7);
+  return `${month}월 ${weekNum}주차`;
 }
+
+const WEEKDAY_LABELS = ["월", "화", "수", "목", "금", "토", "일"];
+
+interface DayItem { label: string; amount: number; }
 
 function CustomTooltip({ active, payload, label }: {
   active?: boolean; payload?: { value: number }[]; label?: string;
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl bg-[#1C1208] px-3 py-2 shadow-lg">
-      <p className="text-xs text-[#9E8E7A]">{label}주</p>
-      <p className="font-(family-name:--font-playfair) text-sm font-semibold text-white">
+    <div className="bg-black px-3 py-2">
+      <p className="text-sm text-white/60">{label}요일</p>
+      <p className="text-base font-black text-white tabular-nums">
         {payload[0].value.toLocaleString("ko-KR")}원
       </p>
     </div>
   );
 }
 
-const WEEK_COUNT = 12;
 interface ChartWeeklyProps { compact?: boolean; }
 
 export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
-  const [chartData, setChartData] = useState<WeekItem[]>([]);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
+  const [chartData, setChartData] = useState<DayItem[]>([]);
+  const [weekTotal, setWeekTotal] = useState(0);
+
+  const { weeklyGoal } = useGoalStore();
+  const rate = weeklyGoal > 0
+    ? Math.min(Math.round((weekTotal / weeklyGoal) * 100), 999)
+    : null;
+
+  const goToPrevWeek = () => {
+    setWeekStart((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() - 7);
+      return d;
+    });
+  };
+
+  const goToNextWeek = () => {
+    setWeekStart((prev) => {
+      const d = new Date(prev);
+      d.setDate(d.getDate() + 7);
+      return d;
+    });
+  };
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const weeks = buildWeeks(WEEK_COUNT);
-        const startDate = weeks[0].weekStart;
-        const lastWeekStart = new Date(weeks[weeks.length - 1].weekStart);
-        const endDate = toDateStr(new Date(lastWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000));
-        const sales = await getSalesByRange(startDate, endDate);
-        const weekMap: Record<string, number> = {};
-        weeks.forEach((w) => { weekMap[w.weekStart] = 0; });
+        const endDate = new Date(weekStart);
+        endDate.setDate(endDate.getDate() + 6);
+        const sales = await getSalesByRange(toDateStr(weekStart), toDateStr(endDate));
+
+        // 월~일 7일치 맵 구성
+        const dayMap: Record<string, number> = {};
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(weekStart);
+          d.setDate(d.getDate() + i);
+          dayMap[toDateStr(d)] = 0;
+        }
         sales.forEach((sale) => {
-          const weekStart = toDateStr(getWeekStart(new Date(sale.date)));
-          if (weekStart in weekMap) weekMap[weekStart] += sale.amount;
+          if (sale.date in dayMap) dayMap[sale.date] += sale.amount;
         });
-        setChartData(weeks.map((w) => ({ ...w, amount: weekMap[w.weekStart] })));
-        setTotalAmount(sales.reduce((sum, s) => sum + s.amount, 0));
-      } catch {
-        // 로드 실패 시 빈 데이터 유지
-      }
+
+        const data = Object.keys(dayMap).map((dateStr, i) => ({
+          label: WEEKDAY_LABELS[i],
+          amount: dayMap[dateStr],
+        }));
+
+        setChartData(data);
+        setWeekTotal(sales.reduce((sum, s) => sum + s.amount, 0));
+      } catch { /* 오류 무시 */ }
     }
     void fetchData();
-  }, []);
+  }, [weekStart]);
 
-  const activeWeekCount = chartData.filter((w) => w.amount > 0).length;
+  const activeDayCount = chartData.filter((d) => d.amount > 0).length;
 
   return (
-    <div className="min-h-screen bg-[#FAF7F0]">
-
-      {/* ── 헤더 ── */}
-      <div className={`px-6 pb-6 ${compact ? "pt-5" : "pt-14"}`}>
-        <p className="text-xs font-semibold tracking-[0.2em] text-[#9E8E7A] uppercase mb-3">
-          최근 {WEEK_COUNT}주
-        </p>
-        <div className="mb-1">
-          <span className="font-(family-name:--font-playfair) text-4xl font-bold leading-none text-[#1C1208]">
-            {totalAmount.toLocaleString("ko-KR")}
+    <div className="flex flex-col bg-white h-full">
+      {/* 헤더 */}
+      <div className={`shrink-0 border-b-2 border-(--gray-5) px-5 pb-4 ${compact ? "pt-4" : "pt-12"}`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <button onClick={goToPrevWeek}
+              className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">‹</button>
+            <h2 className="text-3xl font-black text-black">{getWeekLabel(weekStart)}</h2>
+            <button onClick={goToNextWeek}
+              className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">›</button>
+          </div>
+          <span className="text-sm font-bold text-(--gray-3)">
+            {activeDayCount > 0 ? `${activeDayCount}일 기록` : "기록 없음"}
           </span>
-          <span className="ml-2 text-base font-medium text-[#9E8E7A]">원</span>
         </div>
-        <p className="text-sm text-[#9E8E7A]">
-          {activeWeekCount > 0 ? `${activeWeekCount}주 기록됨` : "기록된 매출이 없어요"}
-        </p>
-      </div>
 
-      <div className="mx-6 border-t border-[#DDD3C2]" />
-
-      {/* ── 차트 ── */}
-      <div className="mx-4 mt-4 rounded-2xl bg-white shadow-sm shadow-black/5 overflow-hidden">
-        <div className="px-4 pt-4 pb-2">
-          <span className="text-sm font-semibold text-[#1C1208]">주별 매출</span>
-        </div>
-        <div className="px-2 pb-6 pt-2">
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barSize={14}>
-                <CartesianGrid vertical={false} stroke="#EDE5D8" />
-                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#C8BAA8" }} tickLine={false} axisLine={false} interval={2} />
-                <YAxis tick={{ fontSize: 10, fill: "#C8BAA8" }} tickLine={false} axisLine={false}
-                  tickFormatter={(v: number) => v >= 10000 ? `${Math.round(v / 10000)}만` : v > 0 ? String(v) : ""}
-                  width={36} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: "#FDF3E1" }} />
-                <Bar dataKey="amount" fill="#B5732A" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="flex h-56 items-center justify-center text-sm text-[#C8BAA8]">
-              데이터를 불러오는 중...
-            </div>
+        {/* 주간 매출 + 목표 금액 */}
+        <div className="flex items-baseline gap-2 mb-3">
+          <span className="text-4xl font-black text-black tabular-nums">
+            {weekTotal.toLocaleString("ko-KR")}
+          </span>
+          <span className="text-xl font-bold text-(--gray-2)">원</span>
+          {weeklyGoal > 0 && (
+            <span className="text-sm font-bold text-(--gray-3) ml-1">
+              / {weeklyGoal.toLocaleString("ko-KR")}원
+            </span>
           )}
         </div>
+
+        {/* 목표 달성률 */}
+        {rate !== null && (
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-sm font-bold text-(--gray-3)">주간 목표 달성률</span>
+              <span className={`text-sm font-black ${rate >= 100 ? "text-[var(--green)]" : "text-black"}`}>
+                {rate}%
+              </span>
+            </div>
+            <div className="h-3 bg-(--gray-5)">
+              <div
+                className={`h-full transition-all duration-700 ${rate >= 100 ? "bg-[var(--green)]" : "bg-black"}`}
+                style={{ width: `${Math.min(rate, 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      <p className="mt-4 mb-6 text-center text-xs text-[#C8BAA8]">
-        막대를 탭하면 주간 합계를 확인할 수 있어요
-      </p>
+      {/* 차트 — 요일별 일간 막대 */}
+      <div className="px-2 pt-3 pb-2">
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={240} minHeight={200}>
+            <BarChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barSize={36}>
+              <CartesianGrid vertical={false} stroke="#EEEEEE" />
+              <XAxis dataKey="label"
+                tick={{ fontSize: 11, fill: "#999", fontWeight: 700 }}
+                tickLine={false} axisLine={false} />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#999", fontWeight: 700 }}
+                tickLine={false} axisLine={false}
+                tickFormatter={(v: number) => v >= 100000000 ? `${Math.round(v / 100000000)}억` : v >= 10000 ? `${Math.round(v / 10000)}만` : v > 0 ? String(v) : ""}
+                width={weekTotal >= 100000000 ? 56 : 46} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "#F7F7F7" }} />
+              <Bar dataKey="amount" fill="#111111" radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-60 flex items-center justify-center text-lg font-bold text-(--gray-4)">
+            불러오는 중...
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,14 +1,12 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-// 루트 진입 시 로그인 여부에 따라 리다이렉트
+// 인증 상태에 따라 적절한 페이지로 리다이렉트
 export default async function RootPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
   if (user) {
     redirect("/dashboard");
-  } else {
-    redirect("/login");
   }
+  redirect("/login");
 }

@@ -8,40 +8,39 @@ import ChartYearly from "@/components/chart/ChartYearly";
 type Tab = "weekly" | "monthly" | "yearly";
 
 const tabs: { key: Tab; label: string }[] = [
-  { key: "weekly", label: "주간" },
+  { key: "weekly",  label: "주간" },
   { key: "monthly", label: "월간" },
-  { key: "yearly", label: "연간" },
+  { key: "yearly",  label: "연간" },
 ];
 
 export default function ChartPage() {
   const [activeTab, setActiveTab] = useState<Tab>("monthly");
 
   return (
-    <div>
+    <div className="h-full flex flex-col overflow-hidden">
       {/* 탭 바 */}
-      <div className="sticky top-0 z-10 bg-[#FAF7F0] border-b border-[#DDD3C2] px-4 pt-12">
-        <div className="flex">
-          {tabs.map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={[
-                "flex-1 pb-3 pt-1 text-sm font-semibold tracking-wide transition-colors",
-                activeTab === key
-                  ? "border-b-2 border-[#B5732A] text-[#B5732A]"
-                  : "border-b-2 border-transparent text-[#C8BAA8] hover:text-[#9E8E7A]",
-              ].join(" ")}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+      <div className="shrink-0 flex border-b-4 border-black pt-10">
+        {tabs.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={[
+              "flex-1 py-4 text-xl font-black transition-colors border-r-2 border-black last:border-r-0",
+              activeTab === key
+                ? "bg-black text-white"
+                : "text-(--gray-3) bg-white active:bg-(--gray-6)",
+            ].join(" ")}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      {/* 탭 콘텐츠 */}
-      {activeTab === "weekly" && <ChartWeekly compact />}
-      {activeTab === "monthly" && <ChartMonthly compact />}
-      {activeTab === "yearly" && <ChartYearly compact />}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === "weekly"  && <ChartWeekly compact />}
+        {activeTab === "monthly" && <ChartMonthly compact />}
+        {activeTab === "yearly"  && <ChartYearly compact />}
+      </div>
     </div>
   );
 }

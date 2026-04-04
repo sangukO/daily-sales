@@ -1,53 +1,54 @@
 @import "tailwindcss";
 
 :root {
-  --cream-bg: #FAF7F0;
-  --ink: #1C1208;
-  --ink-2: #6B5444;
-  --ink-3: #9E8E7A;
-  --ink-4: #C8BAA8;
-  --border: #DDD3C2;
-  --divider: #EDE5D8;
-  --amber: #B5732A;
-  --amber-hover: #9A6023;
-  --amber-light: #FDF3E1;
-  --amber-border: #E8C98A;
-  --sage: #4A7040;
-  --sage-light: #EBF3E6;
-  --error: #8B3030;
-  --error-light: #FBEAEA;
+  /* ── 기본 색상 ── */
+  --white:      #FFFFFF;
+  --black:      #111111;
+  --gray-1:     #333333;
+  --gray-2:     #666666;
+  --gray-3:     #999999;
+  --gray-4:     #CCCCCC;
+  --gray-5:     #EEEEEE;
+  --gray-6:     #F7F7F7;
+
+  /* ── 달력 색상 (벽걸이 달력 스타일) ── */
+  --cal-sun:    #CC0000;   /* 일요일 — 빨강 */
+  --cal-sat:    #0044CC;   /* 토요일 — 파랑 */
+  --cal-weekday: #111111;  /* 평일 */
+
+  /* ── 상태 ── */
+  --green:      #155E2D;
+  --green-bg:   #DCFCE7;
+  --red-bg:     #FEE2E2;
+
+  /* ── 테두리 ── */
+  --border-thick: 2px solid #111111;
+  --border-thin:  1px solid #CCCCCC;
+  --border-cell:  1px solid #DDDDDD;
 }
 
 @theme inline {
   --font-display: var(--font-playfair), Georgia, "Times New Roman", serif;
-  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-  --color-background: var(--cream-bg);
-  --color-foreground: var(--ink);
+  --font-sans:    "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --color-background: var(--white);
+  --color-foreground: var(--black);
 }
 
-body {
-  background: var(--cream-bg);
-  color: var(--ink);
+html, body {
+  background: var(--white);
+  color: var(--black);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: none;
 }
 
-/* react-day-picker 풀 너비 강제 */
-.rdp-months {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-.rdp-month {
-  width: 100% !important;
-}
-.rdp-month_grid {
-  width: 100% !important;
-  table-layout: fixed !important;
-}
-.rdp-day {
-  width: auto !important;
-}
-.rdp-day_button {
-  width: 100% !important;
-  max-width: 100% !important;
-}
+/* ── recharts 터치 아웃라인 제거 ── */
+.recharts-wrapper svg { outline: none; }
+.recharts-wrapper *:focus { outline: none; }
+
+/* ── react-day-picker 초기화 ── */
+.rdp-months { width: 100% !important; max-width: 100% !important; }
+.rdp-month  { width: 100% !important; }
+.rdp-month_grid { width: 100% !important; table-layout: fixed !important; }
+.rdp-day    { width: auto !important; }
+.rdp-day_button { width: 100% !important; max-width: 100% !important; }

@@ -19,6 +19,22 @@ export async function getSalesByMonth(year: number, month: number): Promise<Sale
   return data ?? [];
 }
 
+// 연도별 매출 총합 조회
+export async function getSalesByYear(year: number): Promise<number> {
+  const supabase = createClient();
+  const startDate = `${year}-01-01`;
+  const endDate = `${year}-12-31`;
+
+  const { data, error } = await supabase
+    .from("sales")
+    .select("amount")
+    .gte("date", startDate)
+    .lte("date", endDate);
+
+  if (error) throw error;
+  return (data ?? []).reduce((sum, row) => sum + row.amount, 0);
+}
+
 // 매출 저장 (신규 생성 또는 수정)
 export async function upsertSale(sale: SaleInput & { id?: string }): Promise<Sale> {
   const supabase = createClient();

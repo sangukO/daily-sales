@@ -6,7 +6,9 @@ export async function getSalesByMonth(year: number, month: number): Promise<Sale
   const supabase = createClient();
   const mm = String(month).padStart(2, "0");
   const startDate = `${year}-${mm}-01`;
-  const endDate = `${year}-${mm}-31`;
+  // 해당 월의 실제 마지막 날 계산 (4월=30일, 2월=28/29일 등)
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${mm}-${String(lastDay).padStart(2, "0")}`;
 
   const { data, error } = await supabase
     .from("sales")

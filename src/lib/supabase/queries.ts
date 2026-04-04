@@ -35,6 +35,21 @@ export async function getSalesByYear(year: number): Promise<number> {
   return (data ?? []).reduce((sum, row) => sum + row.amount, 0);
 }
 
+// 날짜 범위 매출 조회 (주간/연간 차트용)
+export async function getSalesByRange(startDate: string, endDate: string): Promise<Sale[]> {
+  const supabase = createClient();
+
+  const { data, error } = await supabase
+    .from("sales")
+    .select("*")
+    .gte("date", startDate)
+    .lte("date", endDate)
+    .order("date", { ascending: true });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
 // 매출 저장 (신규 생성 또는 수정)
 export async function upsertSale(sale: SaleInput & { id?: string }): Promise<Sale> {
   const supabase = createClient();

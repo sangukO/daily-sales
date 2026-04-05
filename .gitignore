@@ -50,3 +50,6 @@ next-env.d.ts
 
 # mcp
 .mcp.json
+
+# brainstorming session files
+.superpowers/

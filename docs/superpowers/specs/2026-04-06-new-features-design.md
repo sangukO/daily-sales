@@ -36,14 +36,15 @@ CurrencyInput 아래에 빠른 금액 추가 버튼 3개 배치.
 - 기존 금액 입력 UI + +증가 버튼 + 메모 필드 표시
 
 **휴무일 탭:**
-- 금액 입력/버튼/메모 전부 숨김
-- "휴무일로 저장합니다" 안내 텍스트만 표시
-- 저장 시 `amount: 0, memo: "휴무"` 로 upsert
+- 금액 입력/+증가 버튼 숨김
+- 메모 필드는 유지 (휴무 이유 기록 가능 — 예: "추석", "비 때문에 쉬었음")
+- 저장 시 `amount: 0, is_holiday: true, memo: 입력값` 으로 upsert
 
 **DB 처리:**
-- 별도 컬럼 추가 없이 `memo` 필드에 `"휴무"` 저장
-- 캘린더에서 `sale.memo === "휴무"` 이면 날짜 셀에 "휴" 텍스트 표시 (회색)
-- 통계(월 총합, 연간 누적)에서는 `amount === 0` 인 경우 자동 제외됨 (현재 구조 그대로)
+- `sales` 테이블에 `is_holiday boolean default false` 컬럼 추가 (Supabase 마이그레이션)
+- 캘린더에서 `sale.is_holiday === true` 이면 날짜 셀에 "휴" 텍스트 표시 (회색)
+- 통계(월 총합, 연간 누적)에서 `is_holiday === true` 인 날은 제외
+- `src/lib/supabase/types.ts` 자동 생성 파일이므로 직접 수정 금지 — `src/types/index.ts`의 `Sale` 타입에 `is_holiday: boolean` 추가
 
 **기존 매출이 있는 날 휴무 전환:**
 - 기존 데이터 upsert로 덮어씀 (삭제 후 재저장 아님)
@@ -121,7 +122,7 @@ CurrencyInput 아래에 빠른 금액 추가 버튼 3개 배치.
 
 **데이터 계산:**
 - 지난 8주치 데이터 fetch (`getSalesByRange(8주 전, 오늘)`)
-- 요일별(월~일)로 그룹핑 → `amount > 0` 인 날만 평균 (휴무일 제외)
+- 요일별(월~일)로 그룹핑 → `is_holiday !== true` 이고 `amount > 0` 인 날만 평균
 - 8주치 데이터를 컴포넌트 마운트 시 1회 fetch (weekStart 변경과 무관)
 
 **표시:**

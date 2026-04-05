@@ -53,8 +53,8 @@ export default function SalesCalendar() {
 
   useEffect(() => {
     let cancelled = false;
-    setFetchError(false);
     async function fetchSales() {
+      setFetchError(false);
       try {
         const sales = await getSalesByMonth(
           month.getFullYear(),

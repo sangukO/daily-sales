@@ -11,14 +11,8 @@ import {
   getSalesByRange,
 } from "@/lib/supabase/queries";
 import { useGoalStore } from "@/store/goalStore";
+import { toDateStr, prevMonth, nextMonth, fmtShort, MONTHS_KO } from "@/lib/utils";
 import type { Sale } from "@/types";
-
-function prevMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth() - 1, 1);
-}
-function nextMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 1);
-}
 
 // 요일 0=일, 6=토
 function getDayColor(dayOfWeek: number): string {
@@ -27,20 +21,6 @@ function getDayColor(dayOfWeek: number): string {
   return "text-(--cal-weekday)";
 }
 
-const MONTHS_KO = [
-  "1월",
-  "2월",
-  "3월",
-  "4월",
-  "5월",
-  "6월",
-  "7월",
-  "8월",
-  "9월",
-  "10월",
-  "11월",
-  "12월",
-];
 const WEEKDAYS_KO = ["일", "월", "화", "수", "목", "금", "토"];
 
 // 이번 주(월~일) 날짜 범위 반환
@@ -65,6 +45,7 @@ export default function SalesCalendar() {
   const [salesMap, setSalesMap] = useState<Record<string, Sale>>({});
   const [yearTotal, setYearTotal] = useState<number>(0);
   const [weekTotal, setWeekTotal] = useState<number>(0);
+  const [fetchError, setFetchError] = useState(false);
   const [dialogDate, setDialogDate] = useState<Date | null>(null);
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -72,6 +53,7 @@ export default function SalesCalendar() {
 
   useEffect(() => {
     let cancelled = false;
+    setFetchError(false);
     async function fetchSales() {
       try {
         const sales = await getSalesByMonth(
@@ -85,7 +67,7 @@ export default function SalesCalendar() {
         });
         setSalesMap(map);
       } catch {
-        /* 오류 무시 */
+        if (!cancelled) setFetchError(true);
       }
     }
     void fetchSales();
@@ -95,28 +77,28 @@ export default function SalesCalendar() {
   }, [month, refreshKey]);
 
   useEffect(() => {
+    let cancelled = false;
     const { start, end } = getThisWeekRange();
     getSalesByRange(start, end)
-      .then((sales) =>
-        setWeekTotal(sales.reduce((sum, s) => sum + s.amount, 0)),
-      )
+      .then((sales) => {
+        if (!cancelled) setWeekTotal(sales.reduce((sum, s) => sum + s.amount, 0));
+      })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [refreshKey]);
 
   const prevYear = useRef<number | null>(null);
   useEffect(() => {
+    let cancelled = false;
     const year = month.getFullYear();
     if (prevYear.current !== year || refreshKey > 0) {
       prevYear.current = year;
       getSalesByYear(year)
-        .then(setYearTotal)
+        .then((total) => { if (!cancelled) setYearTotal(total); })
         .catch(() => {});
     }
+    return () => { cancelled = true; };
   }, [month, refreshKey]);
-
-  function toDateStr(date: Date): string {
-    return date.toLocaleDateString("sv-SE");
-  }
 
   const { monthlyGoal, dailyGoal } = useGoalStore();
   const monthTotal = Object.values(salesMap).reduce(
@@ -154,12 +136,6 @@ export default function SalesCalendar() {
       : 0;
   const dailyAvg =
     salesDayCount > 0 ? Math.round(monthTotal / salesDayCount) : 0;
-
-  function fmtShort(v: number): string {
-    if (v >= 100000000) return `${Math.round(v / 100000000)}억원`;
-    if (v >= 10000) return `${Math.round(v / 10000)}만원`;
-    return `${v.toLocaleString("ko-KR")}원`;
-  }
 
   return (
     <>
@@ -453,6 +429,13 @@ export default function SalesCalendar() {
         >
           {fabLabel}
         </button>
+      )}
+
+      {/* 데이터 로드 오류 */}
+      {fetchError && (
+        <div className="fixed top-14 left-0 right-0 z-50 bg-(--cal-sun) text-white text-sm font-bold text-center py-2 px-4">
+          데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+        </div>
       )}
 
       {/* 매출 입력 다이얼로그 */}

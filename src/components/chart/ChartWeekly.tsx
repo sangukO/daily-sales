@@ -6,10 +6,7 @@ import {
 } from "recharts";
 import { getSalesByRange } from "@/lib/supabase/queries";
 import { useGoalStore } from "@/store/goalStore";
-
-function toDateStr(date: Date): string {
-  return date.toLocaleDateString("sv-SE");
-}
+import { toDateStr } from "@/lib/utils";
 
 function getWeekStart(date: Date): Date {
   const d = new Date(date);
@@ -51,6 +48,8 @@ export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
   const [chartData, setChartData] = useState<DayItem[]>([]);
   const [weekTotal, setWeekTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   const { weeklyGoal } = useGoalStore();
   const rate = weeklyGoal > 0
@@ -74,11 +73,15 @@ export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
   };
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setFetchError(false);
     async function fetchData() {
       try {
         const endDate = new Date(weekStart);
         endDate.setDate(endDate.getDate() + 6);
         const sales = await getSalesByRange(toDateStr(weekStart), toDateStr(endDate));
+        if (cancelled) return;
 
         // 월~일 7일치 맵 구성
         const dayMap: Record<string, number> = {};
@@ -98,9 +101,14 @@ export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
 
         setChartData(data);
         setWeekTotal(sales.reduce((sum, s) => sum + s.amount, 0));
-      } catch { /* 오류 무시 */ }
+      } catch {
+        if (!cancelled) setFetchError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
     void fetchData();
+    return () => { cancelled = true; };
   }, [weekStart]);
 
   const activeDayCount = chartData.filter((d) => d.amount > 0).length;
@@ -111,10 +119,16 @@ export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
       <div className={`shrink-0 border-b-2 border-(--gray-5) px-5 pb-4 ${compact ? "pt-4" : "pt-12"}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <button onClick={goToPrevWeek}
+            <button
+              type="button"
+              onClick={goToPrevWeek}
+              aria-label="이전 주"
               className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">‹</button>
             <h2 className="text-3xl font-black text-black">{getWeekLabel(weekStart)}</h2>
-            <button onClick={goToNextWeek}
+            <button
+              type="button"
+              onClick={goToNextWeek}
+              aria-label="다음 주"
               className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">›</button>
           </div>
           <span className="text-sm font-bold text-(--gray-3)">
@@ -156,7 +170,15 @@ export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
 
       {/* 차트 — 요일별 일간 막대 */}
       <div className="px-2 pt-3 pb-2">
-        {chartData.length > 0 ? (
+        {fetchError ? (
+          <div className="h-60 flex items-center justify-center text-base font-bold text-(--cal-sun)">
+            데이터를 불러오지 못했습니다
+          </div>
+        ) : loading ? (
+          <div className="h-60 flex items-center justify-center text-lg font-bold text-(--gray-4)">
+            불러오는 중...
+          </div>
+        ) : (
           <ResponsiveContainer width="100%" height={240} minHeight={200}>
             <BarChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barSize={36}>
               <CartesianGrid vertical={false} stroke="#EEEEEE" />
@@ -172,10 +194,6 @@ export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
               <Bar dataKey="amount" fill="#111111" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        ) : (
-          <div className="h-60 flex items-center justify-center text-lg font-bold text-(--gray-4)">
-            불러오는 중...
-          </div>
         )}
       </div>
     </div>

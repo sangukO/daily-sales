@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import CurrencyInput from "./CurrencyInput";
 import { upsertSale, deleteSale } from "@/lib/supabase/queries";
 import type { Sale } from "@/types";
@@ -25,6 +25,7 @@ export default function SalesDayDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true));
@@ -34,13 +35,16 @@ export default function SalesDayDialog({
   useEffect(() => {
     const orig = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = orig; };
+    return () => {
+      document.body.style.overflow = orig;
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
   }, []);
 
   function handleClose() {
     onCloseStart();
     setVisible(false);
-    setTimeout(onClose, 280);
+    closeTimerRef.current = setTimeout(onClose, 280);
   }
 
   const DAY_NAMES = ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
@@ -98,7 +102,9 @@ export default function SalesDayDialog({
             <p className="text-lg font-black text-black">{displayDate}</p>
           </div>
           <button
+            type="button"
             onClick={handleClose}
+            aria-label="닫기"
             className="w-11 h-11 flex items-center justify-center text-3xl font-light text-(--gray-3) active:bg-(--gray-5) rounded"
           >
             ×

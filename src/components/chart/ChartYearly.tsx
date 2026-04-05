@@ -30,6 +30,8 @@ export default function ChartYearly({ compact = false }: ChartYearlyProps) {
   const [year, setYear] = useState(currentYear);
   const [chartData, setChartData] = useState<MonthItem[]>([]);
   const [yearTotal, setYearTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   const { yearlyGoal } = useGoalStore();
   const rate = yearlyGoal > 0
@@ -37,9 +39,13 @@ export default function ChartYearly({ compact = false }: ChartYearlyProps) {
     : null;
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setFetchError(false);
     async function fetchData() {
       try {
         const sales = await getSalesByRange(`${year}-01-01`, `${year}-12-31`);
+        if (cancelled) return;
         const monthMap: Record<number, number> = {};
         for (let m = 1; m <= 12; m++) monthMap[m] = 0;
         sales.forEach((sale) => {
@@ -47,9 +53,14 @@ export default function ChartYearly({ compact = false }: ChartYearlyProps) {
         });
         setChartData(Object.entries(monthMap).map(([m, amount]) => ({ label: `${m}월`, amount })));
         setYearTotal(sales.reduce((sum, s) => sum + s.amount, 0));
-      } catch { /* 오류 무시 */ }
+      } catch {
+        if (!cancelled) setFetchError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
     void fetchData();
+    return () => { cancelled = true; };
   }, [year]);
 
   const activeMonthCount = chartData.filter((m) => m.amount > 0).length;
@@ -59,10 +70,16 @@ export default function ChartYearly({ compact = false }: ChartYearlyProps) {
       <div className={`shrink-0 border-b-2 border-(--gray-5) px-5 pb-4 ${compact ? "pt-4" : "pt-12"}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => setYear((y) => y - 1)}
+            <button
+              type="button"
+              onClick={() => setYear((y) => y - 1)}
+              aria-label="이전 연도"
               className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">‹</button>
             <h2 className="text-3xl font-black text-black">{year}년</h2>
-            <button onClick={() => setYear((y) => y + 1)}
+            <button
+              type="button"
+              onClick={() => setYear((y) => y + 1)}
+              aria-label="다음 연도"
               className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">›</button>
           </div>
           <span className="text-sm font-bold text-(--gray-3)">
@@ -87,7 +104,15 @@ export default function ChartYearly({ compact = false }: ChartYearlyProps) {
         )}
       </div>
       <div className="px-2 pt-3 pb-2">
-        {chartData.length > 0 ? (
+        {fetchError ? (
+          <div className="h-60 flex items-center justify-center text-base font-bold text-(--cal-sun)">
+            데이터를 불러오지 못했습니다
+          </div>
+        ) : loading ? (
+          <div className="h-60 flex items-center justify-center text-lg font-bold text-(--gray-4)">
+            불러오는 중...
+          </div>
+        ) : (
           <ResponsiveContainer width="100%" height={240} minHeight={200}>
             <BarChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barSize={20}>
               <CartesianGrid vertical={false} stroke="#EEEEEE" />
@@ -103,10 +128,6 @@ export default function ChartYearly({ compact = false }: ChartYearlyProps) {
               <Bar dataKey="amount" fill="#111111" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        ) : (
-          <div className="h-60 flex items-center justify-center text-lg font-bold text-(--gray-4)">
-            불러오는 중...
-          </div>
         )}
       </div>
     </div>

@@ -6,13 +6,8 @@ import {
 } from "recharts";
 import { getSalesByMonth } from "@/lib/supabase/queries";
 import { useGoalStore } from "@/store/goalStore";
+import { prevMonth, nextMonth, MONTHS_KO } from "@/lib/utils";
 
-function prevMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth() - 1, 1);
-}
-function nextMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 1);
-}
 function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
@@ -35,13 +30,13 @@ function CustomTooltip({ active, payload, label }: {
 
 interface ChartMonthlyProps { compact?: boolean; }
 
-const MONTHS_KO = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
-
 export default function ChartMonthly({ compact = false }: ChartMonthlyProps) {
   const today = new Date();
   const [month, setMonth] = useState<Date>(today);
   const [chartData, setChartData] = useState<ChartDataItem[]>([]);
   const [monthTotal, setMonthTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   const { monthlyGoal } = useGoalStore();
   const rate = monthlyGoal > 0
@@ -49,6 +44,9 @@ export default function ChartMonthly({ compact = false }: ChartMonthlyProps) {
     : null;
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setFetchError(false);
     async function fetchData() {
       try {
         const year = month.getFullYear();
@@ -57,14 +55,20 @@ export default function ChartMonthly({ compact = false }: ChartMonthlyProps) {
         const dataMap: Record<number, number> = {};
         for (let d = 1; d <= days; d++) dataMap[d] = 0;
         const sales = await getSalesByMonth(year, mon);
+        if (cancelled) return;
         sales.forEach((sale) => {
           dataMap[new Date(sale.date).getDate()] = sale.amount;
         });
         setChartData(Object.entries(dataMap).map(([d, amount]) => ({ day: Number(d), amount })));
         setMonthTotal(sales.reduce((sum, s) => sum + s.amount, 0));
-      } catch { /* 오류 무시 */ }
+      } catch {
+        if (!cancelled) setFetchError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
     void fetchData();
+    return () => { cancelled = true; };
   }, [month]);
 
   const salesDayCount = chartData.filter((d) => d.amount > 0).length;
@@ -75,12 +79,18 @@ export default function ChartMonthly({ compact = false }: ChartMonthlyProps) {
       <div className={`shrink-0 border-b-2 border-(--gray-5) px-5 pb-4 ${compact ? "pt-4" : "pt-12"}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => setMonth(prevMonth(month))}
+            <button
+              type="button"
+              onClick={() => setMonth(prevMonth(month))}
+              aria-label="이전 달"
               className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">‹</button>
             <h2 className="text-3xl font-black text-black">
               {month.getFullYear()}년 {MONTHS_KO[month.getMonth()]}
             </h2>
-            <button onClick={() => setMonth(nextMonth(month))}
+            <button
+              type="button"
+              onClick={() => setMonth(nextMonth(month))}
+              aria-label="다음 달"
               className="w-11 h-11 flex items-center justify-center text-2xl font-bold text-(--gray-3) active:bg-(--gray-6) rounded">›</button>
           </div>
           <span className="text-sm font-bold text-(--gray-3)">
@@ -106,9 +116,16 @@ export default function ChartMonthly({ compact = false }: ChartMonthlyProps) {
       </div>
 
       {/* 차트 */}
-      <div className="px-2 pt-3 pb-2"
-      >
-        {chartData.length > 0 ? (
+      <div className="px-2 pt-3 pb-2">
+        {fetchError ? (
+          <div className="h-60 flex items-center justify-center text-base font-bold text-(--cal-sun)">
+            데이터를 불러오지 못했습니다
+          </div>
+        ) : loading ? (
+          <div className="h-60 flex items-center justify-center text-lg font-bold text-(--gray-4)">
+            불러오는 중...
+          </div>
+        ) : (
           <ResponsiveContainer width="100%" height={240} minHeight={200}>
             <BarChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 0 }} barSize={6}>
               <CartesianGrid vertical={false} stroke="#EEEEEE" />
@@ -124,10 +141,6 @@ export default function ChartMonthly({ compact = false }: ChartMonthlyProps) {
               <Bar dataKey="amount" fill="#111111" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        ) : (
-          <div className="h-60 flex items-center justify-center text-lg font-bold text-(--gray-4)">
-            불러오는 중...
-          </div>
         )}
       </div>
     </div>

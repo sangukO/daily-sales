@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useGoalStore } from "@/store/goalStore";
 import { getGoalSettings, upsertGoalSettings } from "@/lib/supabase/queries";
 
@@ -53,9 +53,19 @@ export default function GoalSettings() {
   const [saved,      setSaved]      = useState(false);
   const [saving,     setSaving]     = useState(false);
   const [saveError,  setSaveError]  = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [weeklyAutoCalced,  setWeeklyAutoCalced]  = useState(false);
   const [monthlyAutoCalced, setMonthlyAutoCalced] = useState(false);
   const [yearlyAutoCalced,  setYearlyAutoCalced]  = useState(false);
+
+  // 타이머 cleanup
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    };
+  }, []);
 
   // 설정 화면 진입 시 Supabase에서 최신 목표 동기화
   useEffect(() => {
@@ -111,10 +121,12 @@ export default function GoalSettings() {
       setDailyGoal(goals.dailyGoal); setWeeklyGoal(goals.weeklyGoal);
       setMonthlyGoal(goals.monthlyGoal); setYearlyGoal(goals.yearlyGoal);
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
     } catch {
       setSaveError(true);
-      setTimeout(() => setSaveError(false), 3000);
+      if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+      errorTimerRef.current = setTimeout(() => setSaveError(false), 3000);
     } finally { setSaving(false); }
   }
 

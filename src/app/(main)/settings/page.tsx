@@ -1,5 +1,6 @@
 import GoalSettings from "@/components/settings/GoalSettings";
 import MemoSearch from "@/components/settings/MemoSearch";
+import DataManager from "@/components/settings/DataManager";
 
 export default function SettingsPage() {
   return (
@@ -11,6 +12,7 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-y-auto">
         <MemoSearch />
         <GoalSettings />
+        <DataManager />
       </div>
     </main>
   );

@@ -84,7 +84,7 @@ export default function SalesCalendar() {
       .then((sales) => {
         if (!cancelled) setWeekTotal(sales.reduce((sum, s) => sum + s.amount, 0));
       })
-      .catch(() => {});
+      .catch(() => { if (!cancelled) setFetchError(true); });
     return () => { cancelled = true; };
   }, [refreshKey]);
 
@@ -131,7 +131,7 @@ export default function SalesCalendar() {
       prevYear.current = year;
       getSalesByYear(year)
         .then((total) => { if (!cancelled) setYearTotal(total); })
-        .catch(() => {});
+        .catch(() => { if (!cancelled) setFetchError(true); });
     }
     return () => { cancelled = true; };
   }, [month, refreshKey]);

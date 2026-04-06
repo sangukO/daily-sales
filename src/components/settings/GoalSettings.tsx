@@ -140,7 +140,7 @@ export default function GoalSettings() {
   const hasAny = dailyGoal > 0 || weeklyGoal > 0 || monthlyGoal > 0 || yearlyGoal > 0;
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       <div className="flex-1 overflow-y-auto px-5 py-2">
         <GoalRow label="하루"   value={dailyVal}   onChange={handleDailyChange} />
         <GoalRow

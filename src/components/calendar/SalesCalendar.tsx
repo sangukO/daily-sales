@@ -45,6 +45,7 @@ export default function SalesCalendar() {
   const [salesMap, setSalesMap] = useState<Record<string, Sale>>({});
   const [yearTotal, setYearTotal] = useState<number>(0);
   const [weekTotal, setWeekTotal] = useState<number>(0);
+  const [prevMonthTotal, setPrevMonthTotal] = useState<number | null>(null);
   const [fetchError, setFetchError] = useState(false);
   const [dialogDate, setDialogDate] = useState<Date | null>(null);
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
@@ -87,6 +88,41 @@ export default function SalesCalendar() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPrevMonth() {
+      const today = new Date();
+      const isCurrentMonthView =
+        month.getFullYear() === today.getFullYear() &&
+        month.getMonth() === today.getMonth();
+
+      // 현재 달 조회 중: 전월 1일~오늘 같은 일자, 다른 달 조회 중: 전달 전체
+      const compareDay = isCurrentMonthView
+        ? today.getDate()
+        : new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+      const prevYearNum = month.getMonth() === 0 ? month.getFullYear() - 1 : month.getFullYear();
+      const prevMonthIdx = month.getMonth() === 0 ? 12 : month.getMonth(); // 1-based
+      const mm = String(prevMonthIdx).padStart(2, "0");
+      const lastDayOfPrev = new Date(prevYearNum, prevMonthIdx, 0).getDate();
+      const actualDay = Math.min(compareDay, lastDayOfPrev);
+      const start = `${prevYearNum}-${mm}-01`;
+      const end = `${prevYearNum}-${mm}-${String(actualDay).padStart(2, "0")}`;
+
+      try {
+        const sales = await getSalesByRange(start, end);
+        if (cancelled) return;
+        const total = sales
+          .filter((s) => !s.is_holiday)
+          .reduce((sum, s) => sum + s.amount, 0);
+        setPrevMonthTotal(total > 0 ? total : null);
+      } catch {
+        if (!cancelled) setPrevMonthTotal(null);
+      }
+    }
+    void fetchPrevMonth();
+    return () => { cancelled = true; };
+  }, [month, refreshKey]);
+
   const prevYear = useRef<number | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +156,11 @@ export default function SalesCalendar() {
   const achievementRate =
     monthlyGoal > 0
       ? Math.min(Math.round((monthTotal / monthlyGoal) * 100), 999)
+      : null;
+
+  const prevMonthDiff =
+    prevMonthTotal !== null && prevMonthTotal > 0
+      ? Math.round(((monthTotal - prevMonthTotal) / prevMonthTotal) * 100)
       : null;
 
   // 하단 통계
@@ -220,6 +261,25 @@ export default function SalesCalendar() {
                 className={`h-full transition-all duration-700 ${achievementRate >= 100 ? "bg-(--green)" : "bg-black"}`}
                 style={{ width: `${Math.min(achievementRate, 100)}%` }}
               />
+            </div>
+          )}
+
+          {/* 전월 대비 */}
+          {prevMonthDiff !== null && (
+            <div className="flex items-center justify-between px-4 py-1.5 bg-(--gray-6) border-t border-(--gray-5)">
+              <span className="text-sm font-semibold text-(--gray-2)">전월 대비</span>
+              <span
+                className={`text-base font-black tabular-nums ${
+                  prevMonthDiff > 0
+                    ? "text-(--green)"
+                    : prevMonthDiff < 0
+                      ? "text-(--cal-sun)"
+                      : "text-(--gray-3)"
+                }`}
+              >
+                {prevMonthDiff > 0 ? "▲" : prevMonthDiff < 0 ? "▼" : "—"}{" "}
+                {Math.abs(prevMonthDiff)}%
+              </span>
             </div>
           )}
 

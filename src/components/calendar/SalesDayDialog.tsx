@@ -119,6 +119,19 @@ export default function SalesDayDialog({
               매출액
             </label>
             <CurrencyInput value={amount} onChange={setAmount} placeholder="0" />
+            {/* 빠른 금액 추가 버튼 */}
+            <div className="flex gap-2 mt-2">
+              {[100000, 300000, 500000].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setAmount((prev) => prev + n)}
+                  className="flex-1 border-2 border-black py-3 text-sm font-black active:bg-(--gray-5) transition-colors"
+                >
+                  +{n / 10000}만
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 메모 */}

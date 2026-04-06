@@ -4,6 +4,7 @@ export interface Sale {
   date: string; // YYYY-MM-DD
   amount: number;
   memo: string | null;
+  is_holiday: boolean;
   created_at: string;
 }
 

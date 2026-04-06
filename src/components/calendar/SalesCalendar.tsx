@@ -45,6 +45,7 @@ export default function SalesCalendar() {
   const [salesMap, setSalesMap] = useState<Record<string, Sale>>({});
   const [yearTotal, setYearTotal] = useState<number>(0);
   const [weekTotal, setWeekTotal] = useState<number>(0);
+  const [prevMonthTotal, setPrevMonthTotal] = useState<number | null>(null);
   const [fetchError, setFetchError] = useState(false);
   const [dialogDate, setDialogDate] = useState<Date | null>(null);
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
@@ -87,6 +88,41 @@ export default function SalesCalendar() {
     return () => { cancelled = true; };
   }, [refreshKey]);
 
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchPrevMonth() {
+      const today = new Date();
+      const isCurrentMonthView =
+        month.getFullYear() === today.getFullYear() &&
+        month.getMonth() === today.getMonth();
+
+      // 현재 달 조회 중: 전월 1일~오늘 같은 일자, 다른 달 조회 중: 전달 전체
+      const compareDay = isCurrentMonthView
+        ? today.getDate()
+        : new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+      const prevYearNum = month.getMonth() === 0 ? month.getFullYear() - 1 : month.getFullYear();
+      const prevMonthIdx = month.getMonth() === 0 ? 12 : month.getMonth(); // 1-based
+      const mm = String(prevMonthIdx).padStart(2, "0");
+      const lastDayOfPrev = new Date(prevYearNum, prevMonthIdx, 0).getDate();
+      const actualDay = Math.min(compareDay, lastDayOfPrev);
+      const start = `${prevYearNum}-${mm}-01`;
+      const end = `${prevYearNum}-${mm}-${String(actualDay).padStart(2, "0")}`;
+
+      try {
+        const sales = await getSalesByRange(start, end);
+        if (cancelled) return;
+        const total = sales
+          .filter((s) => !s.is_holiday)
+          .reduce((sum, s) => sum + s.amount, 0);
+        setPrevMonthTotal(total > 0 ? total : null);
+      } catch {
+        if (!cancelled) setPrevMonthTotal(null);
+      }
+    }
+    void fetchPrevMonth();
+    return () => { cancelled = true; };
+  }, [month, refreshKey]);
+
   const prevYear = useRef<number | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -114,10 +150,17 @@ export default function SalesCalendar() {
   const fabLabel = todaySale
     ? `✓ ${todaySale.amount >= 100000000 ? `${Math.round(todaySale.amount / 100000000)}억` : todaySale.amount >= 10000 ? `${Math.round(todaySale.amount / 10000)}만` : todaySale.amount.toLocaleString("ko-KR")}`
     : "오늘 +";
-  const salesDayCount = Object.keys(salesMap).length;
+  const salesDayCount = Object.values(salesMap).filter(
+    (s) => !s.is_holiday
+  ).length;
   const achievementRate =
     monthlyGoal > 0
       ? Math.min(Math.round((monthTotal / monthlyGoal) * 100), 999)
+      : null;
+
+  const prevMonthDiff =
+    prevMonthTotal !== null && prevMonthTotal > 0
+      ? Math.round(((monthTotal - prevMonthTotal) / prevMonthTotal) * 100)
       : null;
 
   // 하단 통계
@@ -168,6 +211,19 @@ export default function SalesCalendar() {
             </button>
           </div>
 
+          {/* 오늘로 돌아오기 — 현재 달이 아닐 때만 표시 */}
+          {!isCurrentMonth && (
+            <div className="flex justify-center py-1.5 border-b border-(--gray-4)">
+              <button
+                type="button"
+                onClick={() => setMonth(new Date())}
+                className="border-2 border-black px-5 py-1.5 text-sm font-black active:bg-(--gray-5) transition-colors"
+              >
+                오늘로
+              </button>
+            </div>
+          )}
+
           {/* 월 매출 요약 행 */}
           <div className="flex items-center px-4 py-2 gap-3">
             <div className="flex-1">
@@ -205,6 +261,25 @@ export default function SalesCalendar() {
                 className={`h-full transition-all duration-700 ${achievementRate >= 100 ? "bg-(--green)" : "bg-black"}`}
                 style={{ width: `${Math.min(achievementRate, 100)}%` }}
               />
+            </div>
+          )}
+
+          {/* 전월 대비 */}
+          {prevMonthDiff !== null && (
+            <div className="flex items-center justify-between px-4 py-1.5 bg-(--gray-6) border-t border-(--gray-5)">
+              <span className="text-sm font-semibold text-(--gray-2)">전월 대비</span>
+              <span
+                className={`text-base font-black tabular-nums ${
+                  prevMonthDiff > 0
+                    ? "text-(--green)"
+                    : prevMonthDiff < 0
+                      ? "text-(--cal-sun)"
+                      : "text-(--gray-3)"
+                }`}
+              >
+                {prevMonthDiff > 0 ? "▲" : prevMonthDiff < 0 ? "▼" : "—"}{" "}
+                {Math.abs(prevMonthDiff)}%
+              </span>
             </div>
           )}
 
@@ -285,6 +360,8 @@ export default function SalesCalendar() {
                   let bgClass = "bg-white active:bg-(--gray-6)";
                   if (isSelected) {
                     bgClass = "bg-black";
+                  } else if (sale?.is_holiday) {
+                    bgClass = "bg-(--gray-6)"; // 휴무일: 회색
                   } else if (isToday) {
                     bgClass = "bg-[#FFF9C4]"; // 연한 노랑 — 오늘 강조
                   } else if (!isOutside && sale) {
@@ -335,23 +412,28 @@ export default function SalesCalendar() {
                       >
                         {day.date.getDate()}
                       </span>
-                      {/* 매출 금액 */}
-                      {amountStr && (
-                        <span
-                          className={[
-                            "text-[10px] font-bold leading-tight mt-0.5",
-                            isSelected
-                              ? "text-white/90"
-                              : dailyGoal > 0 &&
-                                  isPastOrToday &&
-                                  sale &&
-                                  sale.amount < dailyGoal
-                                ? "text-(--cal-sun)"
-                                : "text-(--gray-1)",
-                          ].join(" ")}
-                        >
-                          {amountStr}
-                        </span>
+                      {/* 매출 금액 또는 휴무 표시 */}
+                      {sale && !isOutside && (
+                        sale.is_holiday ? (
+                          <span className="text-[10px] font-bold leading-tight mt-0.5 text-(--gray-3)">
+                            휴
+                          </span>
+                        ) : amountStr ? (
+                          <span
+                            className={[
+                              "text-[10px] font-bold leading-tight mt-0.5",
+                              isSelected
+                                ? "text-white/90"
+                                : dailyGoal > 0 &&
+                                    isPastOrToday &&
+                                    sale.amount < dailyGoal
+                                  ? "text-(--cal-sun)"
+                                  : "text-(--gray-1)",
+                            ].join(" ")}
+                          >
+                            {amountStr}
+                          </span>
+                        ) : null
                       )}
                     </button>
                   );

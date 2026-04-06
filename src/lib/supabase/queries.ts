@@ -144,3 +144,14 @@ export async function deleteSale(id: string): Promise<void> {
 
   if (error) throw error;
 }
+
+// 전체 매출 조회 (JSON 내보내기용)
+export async function getAllSales(): Promise<Sale[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("sales")
+    .select("*")
+    .order("date", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}

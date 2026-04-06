@@ -60,6 +60,7 @@ export default function SalesDayDialog({
         date: date.toLocaleDateString("sv-SE"),
         amount,
         memo: memo.trim() || null,
+        is_holiday: existingSale?.is_holiday ?? false,
       });
       onSaved();
       handleClose();

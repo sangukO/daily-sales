@@ -45,11 +45,14 @@ function CustomTooltip({ active, payload, label }: {
 interface ChartWeeklyProps { compact?: boolean; }
 
 export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
+  interface DayAvgItem { label: string; avg: number; }
+
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
   const [chartData, setChartData] = useState<DayItem[]>([]);
   const [weekTotal, setWeekTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
+  const [dayAvgData, setDayAvgData] = useState<DayAvgItem[]>([]);
 
   const { weeklyGoal } = useGoalStore();
   const rate = weeklyGoal > 0
@@ -110,6 +113,44 @@ export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
     void fetchData();
     return () => { cancelled = true; };
   }, [weekStart]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchDayAvg() {
+      try {
+        const today = new Date();
+        const eightWeeksAgo = new Date(today);
+        eightWeeksAgo.setDate(today.getDate() - 56);
+        const sales = await getSalesByRange(toDateStr(eightWeeksAgo), toDateStr(today));
+        if (cancelled) return;
+
+        // 요일별(0=일~6=토) 합산, 횟수 집계 (휴무일·0원 제외)
+        const sums: Record<number, number> = {};
+        const counts: Record<number, number> = {};
+        for (let i = 0; i < 7; i++) { sums[i] = 0; counts[i] = 0; }
+        sales.forEach((s) => {
+          if (s.is_holiday || s.amount === 0) return;
+          const dow = new Date(s.date).getDay();
+          sums[dow] += s.amount;
+          counts[dow]++;
+        });
+
+        // 월~일 순서로 (1=월 ... 0=일)
+        const labels = ["월", "화", "수", "목", "금", "토", "일"];
+        const dowOrder = [1, 2, 3, 4, 5, 6, 0];
+        setDayAvgData(
+          dowOrder.map((dow, i) => ({
+            label: labels[i],
+            avg: counts[dow] > 0 ? Math.round(sums[dow] / counts[dow]) : 0,
+          }))
+        );
+      } catch {
+        if (!cancelled) setDayAvgData([]);
+      }
+    }
+    void fetchDayAvg();
+    return () => { cancelled = true; };
+  }, []);
 
   const activeDayCount = chartData.filter((d) => d.amount > 0).length;
 
@@ -196,6 +237,30 @@ export default function ChartWeekly({ compact = false }: ChartWeeklyProps) {
           </ResponsiveContainer>
         )}
       </div>
+
+      {/* 요일별 평균 */}
+      {dayAvgData.some((d) => d.avg > 0) && (
+        <div className="px-5 pt-3 pb-5 border-t border-(--gray-5)">
+          <p className="text-xs font-bold text-(--gray-3) mb-3">요일별 평균 (최근 8주)</p>
+          {(() => {
+            const maxAvg = Math.max(...dayAvgData.map((d) => d.avg));
+            return dayAvgData.map((d) => (
+              <div key={d.label} className="flex items-center gap-3 mb-2">
+                <span className="w-5 text-xs font-black text-(--gray-2) shrink-0">{d.label}</span>
+                <div className="flex-1 bg-(--gray-6) h-5 relative">
+                  <div
+                    className="h-full bg-black"
+                    style={{ width: maxAvg > 0 ? `${(d.avg / maxAvg) * 100}%` : "0%" }}
+                  />
+                </div>
+                <span className="text-xs font-bold text-(--gray-2) tabular-nums w-14 text-right shrink-0">
+                  {d.avg > 0 ? `${Math.round(d.avg / 10000)}만` : "—"}
+                </span>
+              </div>
+            ));
+          })()}
+        </div>
+      )}
     </div>
   );
 }

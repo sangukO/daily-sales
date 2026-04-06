@@ -114,7 +114,9 @@ export default function SalesCalendar() {
   const fabLabel = todaySale
     ? `✓ ${todaySale.amount >= 100000000 ? `${Math.round(todaySale.amount / 100000000)}억` : todaySale.amount >= 10000 ? `${Math.round(todaySale.amount / 10000)}만` : todaySale.amount.toLocaleString("ko-KR")}`
     : "오늘 +";
-  const salesDayCount = Object.keys(salesMap).length;
+  const salesDayCount = Object.values(salesMap).filter(
+    (s) => !s.is_holiday
+  ).length;
   const achievementRate =
     monthlyGoal > 0
       ? Math.min(Math.round((monthTotal / monthlyGoal) * 100), 999)
@@ -298,6 +300,8 @@ export default function SalesCalendar() {
                   let bgClass = "bg-white active:bg-(--gray-6)";
                   if (isSelected) {
                     bgClass = "bg-black";
+                  } else if (sale?.is_holiday) {
+                    bgClass = "bg-(--gray-6)"; // 휴무일: 회색
                   } else if (isToday) {
                     bgClass = "bg-[#FFF9C4]"; // 연한 노랑 — 오늘 강조
                   } else if (!isOutside && sale) {
@@ -348,23 +352,28 @@ export default function SalesCalendar() {
                       >
                         {day.date.getDate()}
                       </span>
-                      {/* 매출 금액 */}
-                      {amountStr && (
-                        <span
-                          className={[
-                            "text-[10px] font-bold leading-tight mt-0.5",
-                            isSelected
-                              ? "text-white/90"
-                              : dailyGoal > 0 &&
-                                  isPastOrToday &&
-                                  sale &&
-                                  sale.amount < dailyGoal
-                                ? "text-(--cal-sun)"
-                                : "text-(--gray-1)",
-                          ].join(" ")}
-                        >
-                          {amountStr}
-                        </span>
+                      {/* 매출 금액 또는 휴무 표시 */}
+                      {sale && !isOutside && (
+                        sale.is_holiday ? (
+                          <span className="text-[10px] font-bold leading-tight mt-0.5 text-(--gray-3)">
+                            휴
+                          </span>
+                        ) : amountStr ? (
+                          <span
+                            className={[
+                              "text-[10px] font-bold leading-tight mt-0.5",
+                              isSelected
+                                ? "text-white/90"
+                                : dailyGoal > 0 &&
+                                    isPastOrToday &&
+                                    sale.amount < dailyGoal
+                                  ? "text-(--cal-sun)"
+                                  : "text-(--gray-1)",
+                            ].join(" ")}
+                          >
+                            {amountStr}
+                          </span>
+                        ) : null
                       )}
                     </button>
                   );

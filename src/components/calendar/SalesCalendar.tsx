@@ -168,6 +168,19 @@ export default function SalesCalendar() {
             </button>
           </div>
 
+          {/* 오늘로 돌아오기 — 현재 달이 아닐 때만 표시 */}
+          {!isCurrentMonth && (
+            <div className="flex justify-center py-1.5 border-b border-(--gray-4)">
+              <button
+                type="button"
+                onClick={() => setMonth(new Date())}
+                className="border-2 border-black px-5 py-1.5 text-sm font-black active:bg-(--gray-5) transition-colors"
+              >
+                오늘로
+              </button>
+            </div>
+          )}
+
           {/* 월 매출 요약 행 */}
           <div className="flex items-center px-4 py-2 gap-3">
             <div className="flex-1">

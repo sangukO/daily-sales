@@ -356,8 +356,8 @@ export default function SalesCalendar() {
             ))}
           </div>
 
-          {/* DayPicker 날짜 그리드 */}
-          <div className="flex-1 min-h-0 overflow-hidden">
+          {/* DayPicker 날짜 그리드 — 6주 달은 이 영역 내에서 스크롤 */}
+          <div className="flex-1 overflow-y-auto">
             <DayPicker
               locale={ko}
               mode="single"
@@ -465,78 +465,81 @@ export default function SalesCalendar() {
                 },
               }}
               classNames={{
-                root: "w-full h-full flex flex-col",
-                months: "w-full flex-1 min-h-0 flex flex-col",
-                month: "w-full flex-1 min-h-0 flex flex-col",
+                root: "w-full flex flex-col",
+                months: "w-full flex flex-col",
+                month: "w-full flex flex-col",
                 month_caption: "hidden",
                 weekdays: "hidden" /* 우리가 직접 렌더링 */,
                 weekday: "hidden",
-                weeks: "w-full flex-1 min-h-0 flex flex-col border-t border-(--gray-4)",
-                week: "flex flex-1 divide-x divide-(--gray-4) border-b border-(--gray-4)",
-                day: "flex-1 min-w-0 min-h-0",
+                weeks: "w-full flex flex-col border-t border-(--gray-4)",
+                week: "flex divide-x divide-(--gray-4) border-b border-(--gray-4)",
+                day: "flex-1 min-w-0 aspect-square",
                 outside: "",
                 disabled: "opacity-30",
               }}
             />
           </div>
 
-          {/* ── 하단 통계 ── */}
-          <div className="shrink-0 flex items-center px-5 py-3 border-t-2 border-(--gray-5) bg-(--gray-6)">
-            {monthlyGoal > 0 ? (
-              remaining > 0 ? (
-                <div className="w-full">
-                  <p className="text-xs font-bold text-(--gray-3) mb-0.5">
-                    {isCurrentMonth
-                      ? `${daysLeftInMonth}일 남음 · 목표까지`
-                      : "목표까지"}
-                  </p>
-                  <div className="flex items-baseline justify-between">
-                    <p className="text-xl font-black text-black tabular-nums">
-                      {fmtShort(remaining)} 남았어요
+          {/* ── 하단 통계 + FAB ── */}
+          <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-t-2 border-(--gray-5) bg-(--gray-6)">
+            {/* 통계 텍스트 */}
+            <div className="flex-1 min-w-0">
+              {monthlyGoal > 0 ? (
+                remaining > 0 ? (
+                  <>
+                    <p className="text-xs font-bold text-(--gray-3) mb-0.5">
+                      {isCurrentMonth
+                        ? `${daysLeftInMonth}일 남음 · 목표까지`
+                        : "목표까지"}
                     </p>
-                    {dailyNeeded > 0 && (
-                      <p className="text-sm font-bold text-(--gray-3) tabular-nums">
-                        하루 {fmtShort(dailyNeeded)}씩
+                    <div className="flex items-baseline justify-between">
+                      <p className="text-xl font-black text-black tabular-nums">
+                        −{fmtShort(remaining)}
                       </p>
-                    )}
-                  </div>
-                </div>
+                      {dailyNeeded > 0 && (
+                        <p className="text-sm font-bold text-(--gray-3) tabular-nums shrink-0 ml-2">
+                          하루 {fmtShort(dailyNeeded)}씩
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-bold text-(--green) mb-0.5">
+                      이달 목표 달성
+                    </p>
+                    <p className="text-xl font-black text-(--green) tabular-nums">
+                      +{fmtShort(Math.abs(remaining))}
+                    </p>
+                  </>
+                )
               ) : (
-                <div className="w-full">
-                  <p className="text-xs font-bold text-(--green) mb-0.5">
-                    이달 목표 달성
+                <>
+                  <p className="text-xs font-bold text-(--gray-3) mb-0.5">
+                    일 평균
                   </p>
-                  <p className="text-xl font-black text-(--green) tabular-nums">
-                    +{fmtShort(Math.abs(remaining))} 초과
+                  <p className="text-xl font-black text-black tabular-nums">
+                    {dailyAvg > 0 ? fmtShort(dailyAvg) : "—"}
                   </p>
-                </div>
-              )
-            ) : (
-              <div className="w-full">
-                <p className="text-xs font-bold text-(--gray-3) mb-0.5">
-                  일 평균
-                </p>
-                <p className="text-xl font-black text-black tabular-nums">
-                  {dailyAvg > 0 ? fmtShort(dailyAvg) : "—"}
-                </p>
-              </div>
+                </>
+              )}
+            </div>
+
+            {/* FAB — 하단 통계 바 오른쪽에 인라인 배치 */}
+            {isCurrentMonth && (
+              <button
+                className="shrink-0 bg-black text-white rounded-full px-4 py-3 text-sm font-black active:opacity-70 transition-opacity"
+                onClick={() => {
+                  setDialogDate(today);
+                  setHighlightedDate(today);
+                }}
+              >
+                {fabLabel}
+              </button>
             )}
           </div>
         </div>
       </div>
-
-      {/* 오늘 빠른 입력 FAB */}
-      {isCurrentMonth && (
-        <button
-          className="fixed bottom-20 right-4 z-40 bg-black text-white rounded-full px-4 py-3 text-sm font-black shadow-lg active:opacity-70 transition-opacity"
-          onClick={() => {
-            setDialogDate(today);
-            setHighlightedDate(today);
-          }}
-        >
-          {fabLabel}
-        </button>
-      )}
 
       {/* 데이터 로드 오류 */}
       {fetchError && (

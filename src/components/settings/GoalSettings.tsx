@@ -22,8 +22,8 @@ interface GoalRowProps {
 
 function GoalRow({ label, value, onChange, hint }: GoalRowProps) {
   return (
-    <div className="flex items-center border-b-2 border-(--gray-5) py-4 gap-4">
-      <label className="w-20 shrink-0 text-xl font-black text-black">{label}</label>
+    <div className="flex items-center border-b-2 border-(--gray-5) py-2 gap-4">
+      <label className="w-20 shrink-0 text-lg font-black text-black">{label}</label>
       <div className="flex-1">
         <div className="relative border-2 border-(--gray-4) focus-within:border-black transition-colors flex items-center">
           <input
@@ -32,7 +32,7 @@ function GoalRow({ label, value, onChange, hint }: GoalRowProps) {
             value={value}
             onChange={(e) => onChange(fmt(e.target.value))}
             placeholder="0"
-            className="w-full bg-white px-4 py-3 pr-10 text-right text-2xl font-black text-black placeholder-(--gray-4) focus:outline-none tabular-nums"
+            className="w-full bg-white px-4 py-2 pr-10 text-right text-xl font-black text-black placeholder-(--gray-4) focus:outline-none tabular-nums"
           />
           <span className="absolute right-3 text-base font-bold text-(--gray-3) pointer-events-none">원</span>
         </div>
@@ -173,7 +173,7 @@ export default function GoalSettings() {
         {hasAny && (
           <button
             onClick={handleClear}
-            className="px-6 py-5 text-lg font-black text-(--gray-3) border-r-2 border-black active:bg-(--gray-5) transition-colors"
+            className="px-5 py-4 text-base font-black text-(--gray-3) border-r-2 border-black active:bg-(--gray-5) transition-colors"
           >
             초기화
           </button>
@@ -181,7 +181,7 @@ export default function GoalSettings() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 py-5 text-xl font-black bg-black text-white active:opacity-70 disabled:opacity-50 transition-opacity"
+          className="flex-1 py-4 text-lg font-black bg-black text-white active:opacity-70 disabled:opacity-50 transition-opacity"
         >
           {saving ? "저장 중..." : saved ? "저장됨 ✓" : "저장하기"}
         </button>

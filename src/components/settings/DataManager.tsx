@@ -105,8 +105,8 @@ export default function DataManager() {
   }
 
   return (
-    <div className="px-5 py-5 border-t-2 border-(--gray-5)">
-      <p className="text-xs font-black text-(--gray-3) mb-4 uppercase tracking-wide">데이터 관리</p>
+    <div className="px-5 py-3 border-t-2 border-(--gray-5)">
+      <p className="text-xs font-black text-(--gray-3) mb-3 uppercase tracking-wide">데이터 관리</p>
 
       <div className="flex gap-3">
         {/* 내보내기 */}
@@ -114,7 +114,7 @@ export default function DataManager() {
           type="button"
           onClick={handleExport}
           disabled={exporting || importing}
-          className="flex-1 border-2 border-black py-4 text-sm font-black active:bg-(--gray-5) disabled:opacity-40 transition-colors"
+          className="flex-1 border-2 border-black py-3 text-sm font-black active:bg-(--gray-5) disabled:opacity-40 transition-colors"
         >
           {exporting ? "내보내는 중..." : "JSON 내보내기"}
         </button>
@@ -124,7 +124,7 @@ export default function DataManager() {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={importing || exporting}
-          className="flex-1 border-2 border-black py-4 text-sm font-black active:bg-(--gray-5) disabled:opacity-40 transition-colors"
+          className="flex-1 border-2 border-black py-3 text-sm font-black active:bg-(--gray-5) disabled:opacity-40 transition-colors"
         >
           {importing
             ? importProgress

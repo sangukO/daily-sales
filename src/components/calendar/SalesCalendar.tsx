@@ -46,6 +46,7 @@ export default function SalesCalendar() {
   const [yearTotal, setYearTotal] = useState<number>(0);
   const [weekTotal, setWeekTotal] = useState<number>(0);
   const [prevMonthTotal, setPrevMonthTotal] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const [dialogDate, setDialogDate] = useState<Date | null>(null);
   const [highlightedDate, setHighlightedDate] = useState<Date | null>(null);
@@ -55,6 +56,7 @@ export default function SalesCalendar() {
   useEffect(() => {
     let cancelled = false;
     async function fetchSales() {
+      setLoading(true);
       setFetchError(false);
       try {
         const sales = await getSalesByMonth(
@@ -69,6 +71,8 @@ export default function SalesCalendar() {
         setSalesMap(map);
       } catch {
         if (!cancelled) setFetchError(true);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
     void fetchSales();
@@ -242,20 +246,24 @@ export default function SalesCalendar() {
             <div className="flex-1">
               <p className="text-xs text-(--gray-3) font-medium mb-0.5">
                 이달 총매출{" "}
-                {salesDayCount > 0 ? `(${salesDayCount}일 기록)` : ""}
+                {salesDayCount > 0 && !loading ? `(${salesDayCount}일 기록)` : ""}
               </p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-black text-black tabular-nums leading-none">
-                  {monthTotal.toLocaleString("ko-KR")}
-                </span>
-                <span className="text-base font-bold text-(--gray-2)">
-                  원
-                </span>
-              </div>
+              {loading ? (
+                <div className="h-8 w-32 bg-(--gray-5) animate-pulse rounded-sm" />
+              ) : (
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-black tabular-nums leading-none">
+                    {monthTotal.toLocaleString("ko-KR")}
+                  </span>
+                  <span className="text-base font-bold text-(--gray-2)">
+                    원
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* 목표 달성률 */}
-            {achievementRate !== null && (
+            {achievementRate !== null && !loading && (
               <div className="text-right shrink-0">
                 <p className="text-xs text-(--gray-3) mb-0.5">월 목표</p>
                 <p

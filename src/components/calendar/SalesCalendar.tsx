@@ -357,7 +357,7 @@ export default function SalesCalendar() {
           </div>
 
           {/* DayPicker 날짜 그리드 */}
-          <div className="shrink-0">
+          <div className="flex-1 min-h-0 overflow-hidden">
             <DayPicker
               locale={ko}
               mode="single"
@@ -465,15 +465,15 @@ export default function SalesCalendar() {
                 },
               }}
               classNames={{
-                root: "w-full flex flex-col",
-                months: "w-full flex flex-col",
-                month: "w-full flex flex-col",
+                root: "w-full h-full flex flex-col",
+                months: "w-full flex-1 min-h-0 flex flex-col",
+                month: "w-full flex-1 min-h-0 flex flex-col",
                 month_caption: "hidden",
                 weekdays: "hidden" /* 우리가 직접 렌더링 */,
                 weekday: "hidden",
-                weeks: "w-full flex flex-col border-t border-(--gray-4)",
-                week: "flex divide-x divide-(--gray-4) border-b border-(--gray-4)",
-                day: "flex-1 min-w-0 aspect-square",
+                weeks: "w-full flex-1 min-h-0 flex flex-col border-t border-(--gray-4)",
+                week: "flex flex-1 divide-x divide-(--gray-4) border-b border-(--gray-4)",
+                day: "flex-1 min-w-0 min-h-0",
                 outside: "",
                 disabled: "opacity-30",
               }}

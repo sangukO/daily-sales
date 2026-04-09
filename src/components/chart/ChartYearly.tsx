@@ -109,8 +109,14 @@ export default function ChartYearly({ compact = false }: ChartYearlyProps) {
             데이터를 불러오지 못했습니다
           </div>
         ) : loading ? (
-          <div className="h-60 flex items-center justify-center text-lg font-bold text-(--gray-4)">
-            불러오는 중...
+          <div className="h-60 flex items-end justify-around gap-1 px-2 pb-2">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex-1 bg-(--gray-5) animate-pulse rounded-sm"
+                style={{ height: `${30 + Math.sin(i) * 20 + 20}%` }}
+              />
+            ))}
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={240} minHeight={200}>

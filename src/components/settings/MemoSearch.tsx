@@ -37,16 +37,16 @@ export default function MemoSearch() {
   }, [query]);
 
   return (
-    <div className="px-5 py-4 border-b-2 border-(--gray-5)">
+    <div className="px-5 py-3 border-b-2 border-(--gray-5)">
       {/* 검색창 */}
-      <div className="border-2 border-black flex items-center px-3 gap-2 mb-3">
+      <div className="border-2 border-black flex items-center px-3 gap-2 mb-2">
         <span className="text-base text-(--gray-3)">🔍</span>
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="메모 검색..."
-          className="flex-1 bg-white py-3 text-base text-black placeholder-(--gray-4) focus:outline-none"
+          className="flex-1 bg-white py-2 text-base text-black placeholder-(--gray-4) focus:outline-none"
         />
         {query && (
           <button

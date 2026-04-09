@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import CurrencyInput from "./CurrencyInput";
 import { upsertSale, deleteSale } from "@/lib/supabase/queries";
+import { useToastStore } from "@/store/toastStore";
 import type { Sale } from "@/types";
 
 interface SalesDayDialogProps {
@@ -29,6 +30,7 @@ export default function SalesDayDialog({
   const [error, setError] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showToast = useToastStore((s) => s.show);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true));
@@ -68,6 +70,7 @@ export default function SalesDayDialog({
         memo: memo.trim() || null,
         is_holiday: mode === "holiday",
       });
+      showToast("저장됐어요 ✓");
       onSaved();
       handleClose();
     } catch {
@@ -83,6 +86,7 @@ export default function SalesDayDialog({
     setError(null);
     try {
       await deleteSale(existingSale.id);
+      showToast("삭제됐어요");
       onSaved();
       handleClose();
     } catch {

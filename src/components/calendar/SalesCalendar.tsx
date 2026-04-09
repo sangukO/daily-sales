@@ -123,6 +123,19 @@ export default function SalesCalendar() {
     return () => { cancelled = true; };
   }, [month, refreshKey]);
 
+  const touchStartX = useRef<number | null>(null);
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    if (delta > 50) setMonth(prevMonth(month));
+    else if (delta < -50) setMonth(nextMonth(month));
+  }
+
   const prevYear = useRef<number | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -311,7 +324,11 @@ export default function SalesCalendar() {
         </div>
 
         {/* ── 달력 본체 ── */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        <div
+          className="flex-1 overflow-hidden flex flex-col min-h-0"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* 요일 헤더 */}
           <div className="shrink-0 grid grid-cols-7 border-b-2 border-black divide-x divide-(--gray-4)">
             {WEEKDAYS_KO.map((day, i) => (

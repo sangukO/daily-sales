@@ -1,5 +1,6 @@
 import BottomNav from "@/components/layout/BottomNav";
 import Toast from "@/components/layout/Toast";
+import GoalInitializer from "@/components/layout/GoalInitializer";
 
 export default function MainLayout({
   children,
@@ -8,6 +9,7 @@ export default function MainLayout({
 }) {
   return (
     <div className="h-screen overflow-hidden flex flex-col">
+      <GoalInitializer />
       <Toast />
       <div className="flex-1 overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))]">{children}</div>
       <BottomNav />

@@ -4,10 +4,26 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+const TEST_PHONE = process.env.NEXT_PUBLIC_DEV_TEST_PHONE ?? null;
+const TEST_OTP = process.env.NEXT_PUBLIC_DEV_TEST_OTP ?? null;
+
 function toE164(phone: string): string {
   const digits = phone.replace(/[^0-9]/g, "");
   if (digits.startsWith("0")) return "+82" + digits.slice(1);
   return "+" + digits;
+}
+
+/** 숫자만 추출 후 010-XXXX-XXXX 형식으로 포맷 */
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/[^0-9]/g, "").slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+}
+
+/** 하이픈 제거한 순수 숫자 */
+function digitsOnly(phone: string): string {
+  return phone.replace(/[^0-9]/g, "");
 }
 
 export default function LoginPage() {
@@ -18,8 +34,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // sms_autoconfirm=true 환경: signInWithOtp 성공 시 이미 세션이 생길 수 있음
-  // 그 경우 자동으로 dashboard로 이동
   useEffect(() => {
     const supabase = createClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -32,15 +46,36 @@ export default function LoginPage() {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  async function handleSendOtp() {
-    if (!phone.trim()) return;
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const formatted = formatPhone(e.target.value);
+    setPhone(formatted);
+
+    // 테스트 번호 입력 완료 시 자동으로 다음 단계
+    if (TEST_PHONE && digitsOnly(formatted) === TEST_PHONE) {
+      handleSendOtp(formatted);
+    }
+  }
+
+  function handleOtpChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value.replace(/[^0-9]/g, "");
+    setOtp(value);
+
+    // 테스트 OTP 입력 완료 시 자동 인증
+    if (TEST_OTP && value === TEST_OTP) {
+      handleVerifyOtp(value);
+    }
+  }
+
+  async function handleSendOtp(phoneOverride?: string) {
+    const target = phoneOverride ?? phone;
+    if (!target.trim()) return;
     setLoading(true);
     setError(null);
 
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOtp({
-        phone: toE164(phone),
+        phone: toE164(target),
       });
 
       if (error) {
@@ -48,7 +83,6 @@ export default function LoginPage() {
         return;
       }
 
-      // 성공 → OTP 입력 단계
       setStep("otp");
     } catch (err) {
       setError(`오류: ${err instanceof Error ? err.message : String(err)}`);
@@ -57,8 +91,9 @@ export default function LoginPage() {
     }
   }
 
-  async function handleVerifyOtp() {
-    if (otp.length < 6) return;
+  async function handleVerifyOtp(otpOverride?: string) {
+    const token = otpOverride ?? otp;
+    if (token.length < 6) return;
     setLoading(true);
     setError(null);
 
@@ -66,7 +101,7 @@ export default function LoginPage() {
       const supabase = createClient();
       const { error } = await supabase.auth.verifyOtp({
         phone: toE164(phone),
-        token: otp,
+        token,
         type: "sms",
       });
 
@@ -94,7 +129,7 @@ export default function LoginPage() {
           <p className="text-lg font-semibold text-(--gray-2)">
             {step === "phone"
               ? "전화번호를 입력하세요"
-              : `인증번호를 입력하세요`}
+              : "인증번호를 입력하세요"}
           </p>
         </div>
 
@@ -117,9 +152,9 @@ export default function LoginPage() {
                 inputMode="numeric"
                 autoComplete="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={handlePhoneChange}
                 onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
-                placeholder="01012345678"
+                placeholder="010-0000-0000"
                 className="w-full border-2 border-(--gray-4) bg-white px-4 py-4 text-2xl font-bold text-black placeholder-(--gray-4) focus:outline-none focus:border-black transition-colors"
               />
             </div>
@@ -127,7 +162,7 @@ export default function LoginPage() {
             <button
               type="button"
               disabled={loading || !phone.trim()}
-              onClick={handleSendOtp}
+              onClick={() => handleSendOtp()}
               className="w-full bg-black py-5 text-xl font-black text-white active:opacity-70 disabled:opacity-50 transition-opacity"
             >
               {loading ? "발송 중..." : "인증번호 받기"}
@@ -148,7 +183,7 @@ export default function LoginPage() {
                 autoComplete="one-time-code"
                 maxLength={6}
                 value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
+                onChange={handleOtpChange}
                 onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
                 placeholder="000000"
                 autoFocus
@@ -162,7 +197,7 @@ export default function LoginPage() {
             <button
               type="button"
               disabled={loading || otp.length < 6}
-              onClick={handleVerifyOtp}
+              onClick={() => handleVerifyOtp()}
               className="w-full bg-black py-5 text-xl font-black text-white active:opacity-70 disabled:opacity-50 transition-opacity"
             >
               {loading ? "확인 중..." : "로그인"}

@@ -94,8 +94,7 @@ export default function SalesDayDialog({
 
   return (
     <div
-      className={`fixed inset-0 z-60 flex items-end justify-center transition-opacity duration-280 ${visible ? "opacity-100" : "opacity-0"}`}
-      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+      className={`fixed inset-0 z-60 flex items-end justify-center bg-black/50 transition-opacity duration-280 ${visible ? "opacity-100" : "opacity-0"}`}
       onClick={handleClose}
     >
       <div

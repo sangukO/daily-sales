@@ -76,17 +76,33 @@ export default function DataManager() {
 
       const backup = data as BackupData;
       const total = backup.sales.length;
+
+      if (total > 10000) {
+        setImportError("항목이 너무 많습니다. (최대 10,000건)");
+        return;
+      }
+
       let success = 0;
       let fail = 0;
+
+      const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
       for (let i = 0; i < backup.sales.length; i++) {
         setImportProgress({ done: i, total });
         try {
           const s = backup.sales[i];
+
+          // 날짜 포맷 검증
+          if (typeof s.date !== "string" || !DATE_RE.test(s.date)) { fail++; continue; }
+          // 금액: 정수이고 0 이상 10억 이하
+          if (typeof s.amount !== "number" || !Number.isInteger(s.amount) || s.amount < 0 || s.amount > 1_000_000_000) { fail++; continue; }
+          // 메모 길이 제한
+          if (s.memo !== null && s.memo !== undefined && (typeof s.memo !== "string" || s.memo.length > 500)) { fail++; continue; }
+
           await upsertSale({
             date: s.date,
             amount: s.amount,
-            memo: s.memo,
+            memo: s.memo ?? null,
             is_holiday: s.is_holiday ?? false,
           });
           success++;

@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     .not("push_endpoint", "is", null)
     .not("notification_hour", "is", null);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "조회에 실패했습니다." }, { status: 500 });
   if (!settings || settings.length === 0) return NextResponse.json({ sent: 0 });
 
   // 현재 KST 시각 (UTC+9)

@@ -4,8 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-const TEST_PHONE = process.env.NEXT_PUBLIC_DEV_TEST_PHONE ?? null;
-const TEST_OTP = process.env.NEXT_PUBLIC_DEV_TEST_OTP ?? null;
+// 개발 환경에서만 테스트 계정 활성화 — 프로덕션에서는 항상 null
+const TEST_PHONE = process.env.NODE_ENV === "development"
+  ? (process.env.NEXT_PUBLIC_DEV_TEST_PHONE ?? null)
+  : null;
+const TEST_OTP = process.env.NODE_ENV === "development"
+  ? (process.env.NEXT_PUBLIC_DEV_TEST_OTP ?? null)
+  : null;
 
 function toE164(phone: string): string {
   const digits = phone.replace(/[^0-9]/g, "");
@@ -79,13 +84,13 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setError(`오류: ${error.message}`);
+        setError("인증번호 발송에 실패했습니다. 전화번호를 확인해주세요.");
         return;
       }
 
       setStep("otp");
-    } catch (err) {
-      setError(`오류: ${err instanceof Error ? err.message : String(err)}`);
+    } catch {
+      setError("일시적인 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
@@ -106,13 +111,13 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setError(`오류: ${error.message}`);
+        setError("인증번호가 올바르지 않거나 만료됐습니다. 다시 시도해주세요.");
         return;
       }
 
       router.push("/dashboard");
-    } catch (err) {
-      setError(`오류: ${err instanceof Error ? err.message : String(err)}`);
+    } catch {
+      setError("일시적인 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }

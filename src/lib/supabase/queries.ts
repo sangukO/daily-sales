@@ -133,6 +133,35 @@ export async function upsertGoalSettings(settings: GoalSettings): Promise<void> 
   if (error) throw error;
 }
 
+// ── 푸시 알림 설정 조회 (클라이언트 전용) ──────────────────────────────
+
+export interface NotificationConfig {
+  notificationHour: number | null;
+  hasSubscription: boolean;
+}
+
+export async function getNotificationSettings(): Promise<NotificationConfig> {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { notificationHour: null, hasSubscription: false };
+
+  const { data, error } = await supabase
+    .from("user_settings")
+    .select("notification_hour, push_endpoint")
+    .eq("user_id", user.id)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") return { notificationHour: null, hasSubscription: false };
+    throw error;
+  }
+
+  return {
+    notificationHour: data.notification_hour ?? null,
+    hasSubscription: !!data.push_endpoint,
+  };
+}
+
 // 매출 삭제
 export async function deleteSale(id: string): Promise<void> {
   const supabase = createClient();

@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "저장에 실패했습니다." }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
 
@@ -44,6 +44,6 @@ export async function DELETE() {
     })
     .eq("user_id", user.id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "저장에 실패했습니다." }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

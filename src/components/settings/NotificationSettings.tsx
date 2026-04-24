@@ -87,6 +87,7 @@ export default function NotificationSettings() {
   }
 
   async function handleHourChange(newHour: number) {
+    const prevHour = hour;
     setHour(newHour);
     if (!enabled) return;
 
@@ -101,11 +102,14 @@ export default function NotificationSettings() {
         keys: { p256dh: string; auth: string };
       };
 
-      await fetch("/api/push/subscribe", {
+      const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ subscription: subJson, notificationHour: newHour }),
       });
+      if (!res.ok) setHour(prevHour);
+    } catch {
+      setHour(prevHour);
     } finally {
       setSaving(false);
     }

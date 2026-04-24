@@ -136,16 +136,19 @@ export default function SalesCalendar() {
     if (touchStartX.current === null) return;
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
+    if (dialogDate !== null) return;
     if (delta > 50) setMonth(prevMonth(month));
     else if (delta < -50) setMonth(nextMonth(month));
   }
 
   const prevYear = useRef<number | null>(null);
+  const prevRefreshKey = useRef<number>(-1);
   useEffect(() => {
     let cancelled = false;
     const year = month.getFullYear();
-    if (prevYear.current !== year || refreshKey > 0) {
+    if (prevYear.current !== year || prevRefreshKey.current !== refreshKey) {
       prevYear.current = year;
+      prevRefreshKey.current = refreshKey;
       getSalesByYear(year)
         .then((total) => { if (!cancelled) setYearTotal(total); })
         .catch(() => { if (!cancelled) setFetchError(true); });

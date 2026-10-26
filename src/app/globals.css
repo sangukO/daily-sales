@@ -52,3 +52,7 @@ html, body {
 .rdp-month_grid { width: 100% !important; table-layout: fixed !important; }
 .rdp-day    { width: auto !important; }
 .rdp-day_button { width: 100% !important; max-width: 100% !important; }
+
+/* 기본 스크롤은 유지하고, 표시 막대는 콘텐츠 위에 겹칩니다. */
+.calendar-scroll-viewport { scrollbar-width: none; }
+.calendar-scroll-viewport::-webkit-scrollbar { display: none; }

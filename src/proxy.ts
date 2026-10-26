@@ -3,6 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Auth 세션을 갱신하고 보호된 라우트를 처리하는 프록시 (Next.js 16)
 export async function proxy(request: NextRequest) {
+  // 콜백은 세션 쿠키가 생기기 전에 인증 코드를 교환해야 합니다.
+  if (request.nextUrl.pathname === "/auth/callback") {
+    return NextResponse.next({ request });
+  }
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -41,14 +45,18 @@ export async function proxy(request: NextRequest) {
   if (!user && !isLoginPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    return response;
   }
 
   // 인증된 사용자가 로그인 페이지 접근 시 대시보드로 리다이렉트
   if (user && isLoginPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    return response;
   }
 
   return supabaseResponse;

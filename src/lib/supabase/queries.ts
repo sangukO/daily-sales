@@ -1,6 +1,20 @@
 import { createClient } from "./client";
 import type { Sale, SaleInput } from "@/types";
 
+// Google 인증 후 같은 브라우저의 콜백에서 세션을 저장합니다.
+export async function signInWithGoogle(origin: string): Promise<void> {
+  const supabase = createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: new URL("/auth/callback", origin).toString(),
+      queryParams: { prompt: "select_account" },
+    },
+  });
+  if (error) throw error;
+  if (!data.url) throw new Error("로그인 주소를 받지 못했습니다.");
+}
+
 // ── 목표 설정 타입 ──────────────────────────────────────────
 export interface GoalSettings {
   dailyGoal: number;

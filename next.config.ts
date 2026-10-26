@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import withPWA from "@ducanh2912/next-pwa";
+import withPWA, { runtimeCaching } from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -7,9 +7,20 @@ const nextConfig: NextConfig = {
 
 export default withPWA({
   dest: "public",
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  cacheOnFrontEndNav: false,
+  aggressiveFrontEndNavCaching: false,
   reloadOnOnline: true,
   disable: process.env.NODE_ENV === "development",
-  customWorker: "worker/index.ts",
+  customWorkerSrc: "worker",
+  customWorkerPrefix: "swe-worker",
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        // 로그인과 인증 코드 응답은 기기에 캐시하지 않습니다.
+        urlPattern: /^https?:\/\/[^/]+\/(?:auth\/|login(?:[/?]|$))/,
+        handler: "NetworkOnly",
+      },
+      ...runtimeCaching,
+    ],
+  },
 })(nextConfig);

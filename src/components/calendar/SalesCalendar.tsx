@@ -5,6 +5,7 @@ import { DayPicker } from "react-day-picker";
 import { ko } from "react-day-picker/locale";
 import "react-day-picker/style.css";
 import SalesDayDialog from "./SalesDayDialog";
+import OverlayScrollArea from "./OverlayScrollArea";
 import {
   getSalesByMonth,
   getSalesByYear,
@@ -341,7 +342,7 @@ export default function SalesCalendar() {
           onTouchEnd={handleTouchEnd}
         >
           {/* 헤더와 날짜가 같은 스크롤 영역 너비를 사용해야 열이 맞습니다. */}
-          <div className="flex-1 min-h-0 overflow-y-auto">
+          <OverlayScrollArea>
             <div className="sticky top-0 z-10 grid grid-cols-7 bg-white border-b-2 border-black divide-x divide-(--gray-4)">
               {WEEKDAYS_KO.map((day, i) => (
                 <div
@@ -481,7 +482,7 @@ export default function SalesCalendar() {
                 disabled: "opacity-30",
               }}
             />
-          </div>
+          </OverlayScrollArea>
 
           {/* ── 하단 통계 + FAB ── */}
           <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-t-2 border-(--gray-5) bg-(--gray-6)">

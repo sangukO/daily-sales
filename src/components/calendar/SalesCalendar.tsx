@@ -361,126 +361,126 @@ export default function SalesCalendar() {
             </div>
 
             {/* 날짜를 스크롤해도 요일 헤더는 상단에 고정됩니다. */}
-              <DayPicker
-                locale={ko}
-                mode="single"
-                month={month}
-                onMonthChange={setMonth}
-                onDayClick={(date) => {
-                  setDialogDate(date);
-                  setHighlightedDate(date);
-                }}
-                hideNavigation
-                components={{
-                  MonthCaption: () => <></>,
-                  DayButton: ({ day, modifiers, ...props }) => {
-                    const dateStr = toDateStr(day.date);
-                    const sale = salesMap[dateStr];
-                    const dayOfWeek = day.date.getDay();
-                    const isToday = modifiers.today;
-                    const isSelected = highlightedDate
-                      ? dateStr === toDateStr(highlightedDate)
-                      : false;
-                    const isOutside = modifiers.outside;
-                    const isPastOrToday = dateStr <= todayStr;
+            <DayPicker
+              locale={ko}
+              mode="single"
+              month={month}
+              onMonthChange={setMonth}
+              onDayClick={(date) => {
+                setDialogDate(date);
+                setHighlightedDate(date);
+              }}
+              hideNavigation
+              components={{
+                MonthCaption: () => <></>,
+                DayButton: ({ day, modifiers, ...props }) => {
+                  const dateStr = toDateStr(day.date);
+                  const sale = salesMap[dateStr];
+                  const dayOfWeek = day.date.getDay();
+                  const isToday = modifiers.today;
+                  const isSelected = highlightedDate
+                    ? dateStr === toDateStr(highlightedDate)
+                    : false;
+                  const isOutside = modifiers.outside;
+                  const isPastOrToday = dateStr <= todayStr;
 
-                    // 배경색 결정
-                    let bgClass = "bg-white active:bg-(--gray-6)";
-                    if (isSelected) {
-                      bgClass = "bg-black";
-                    } else if (sale?.is_holiday) {
-                      bgClass = "bg-(--gray-6)"; // 휴무일: 회색
-                    } else if (isToday) {
-                      bgClass = "bg-[#FFF9C4]"; // 연한 노랑 — 오늘 강조
-                    } else if (!isOutside && sale) {
-                      if (dailyGoal > 0 && isPastOrToday) {
-                        bgClass =
-                          sale.amount >= dailyGoal
-                            ? "bg-(--green-bg)"
-                            : "bg-(--red-bg)";
-                      } else {
-                        bgClass = "bg-[#F0F8FF]"; // 매출 있는 날 — 연한 파랑
-                      }
+                  // 배경색 결정
+                  let bgClass = "bg-white active:bg-(--gray-6)";
+                  if (isSelected) {
+                    bgClass = "bg-black";
+                  } else if (sale?.is_holiday) {
+                    bgClass = "bg-(--gray-6)"; // 휴무일: 회색
+                  } else if (isToday) {
+                    bgClass = "bg-[#FFF9C4]"; // 연한 노랑 — 오늘 강조
+                  } else if (!isOutside && sale) {
+                    if (dailyGoal > 0 && isPastOrToday) {
+                      bgClass =
+                        sale.amount >= dailyGoal
+                          ? "bg-(--green-bg)"
+                          : "bg-(--red-bg)";
+                    } else {
+                      bgClass = "bg-[#F0F8FF]"; // 매출 있는 날 — 연한 파랑
                     }
+                  }
 
-                    // 날짜 숫자 색상
-                    let numColor = getDayColor(dayOfWeek);
-                    if (isSelected) numColor = "text-white";
-                    else if (isOutside) numColor = "text-(--gray-4)";
+                  // 날짜 숫자 색상
+                  let numColor = getDayColor(dayOfWeek);
+                  if (isSelected) numColor = "text-white";
+                  else if (isOutside) numColor = "text-(--gray-4)";
 
-                    // 금액 포맷 (짧게)
-                    let amountStr = "";
-                    if (sale && !isOutside) {
-                      amountStr =
-                        sale.amount >= 100000000
-                          ? `${Math.round(sale.amount / 100000000)}억`
-                          : sale.amount >= 10000
-                            ? `${Math.round(sale.amount / 10000)}만`
-                            : sale.amount.toLocaleString("ko-KR");
-                    }
+                  // 금액 포맷 (짧게)
+                  let amountStr = "";
+                  if (sale && !isOutside) {
+                    amountStr =
+                      sale.amount >= 100000000
+                        ? `${Math.round(sale.amount / 100000000)}억`
+                        : sale.amount >= 10000
+                          ? `${Math.round(sale.amount / 10000)}만`
+                          : sale.amount.toLocaleString("ko-KR");
+                  }
 
-                    return (
-                      <button
-                        {...props}
-                        className={[
-                          "relative w-full h-full flex flex-col items-center justify-center",
-                          "",
-                          "focus:outline-none transition-colors",
-                          bgClass,
-                          isOutside ? "opacity-40" : "",
-                        ].join(" ")}
+                  return (
+                    <button
+                      {...props}
+                      className={[
+                        "relative w-full h-full flex flex-col items-center justify-center",
+                        "",
+                        "focus:outline-none transition-colors",
+                        bgClass,
+                        isOutside ? "opacity-40" : "",
+                      ].join(" ")}
+                    >
+                      {/* 오늘 표시 점 */}
+                      {isToday && !isSelected && (
+                        <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-blue-300" />
+                      )}
+                      {/* 날짜 숫자 — 크고 굵게 */}
+                      <span
+                        className={`text-2xl font-black leading-none ${numColor}`}
                       >
-                        {/* 오늘 표시 점 */}
-                        {isToday && !isSelected && (
-                          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-blue-300" />
-                        )}
-                        {/* 날짜 숫자 — 크고 굵게 */}
-                        <span
-                          className={`text-2xl font-black leading-none ${numColor}`}
-                        >
-                          {day.date.getDate()}
-                        </span>
-                        {/* 매출 금액 또는 휴무 표시 */}
-                        {sale && !isOutside && (
-                          sale.is_holiday ? (
-                            <span className="text-[10px] font-bold leading-tight mt-0.5 text-(--gray-3)">
-                              휴
-                            </span>
-                          ) : amountStr ? (
-                            <span
-                              className={[
-                                "text-[10px] font-bold leading-tight mt-0.5",
-                                isSelected
-                                  ? "text-white/90"
-                                  : dailyGoal > 0 &&
-                                      isPastOrToday &&
-                                      sale.amount < dailyGoal
-                                    ? "text-(--cal-sun)"
-                                    : "text-(--gray-1)",
-                              ].join(" ")}
-                            >
-                              {amountStr}
-                            </span>
-                          ) : null
-                        )}
-                      </button>
-                    );
-                  },
-                }}
-                classNames={{
-                  root: "w-full flex flex-col",
-                  months: "w-full flex flex-col",
-                  month: "w-full flex flex-col",
-                  month_caption: "hidden",
-                  weekdays: "hidden" /* 우리가 직접 렌더링 */,
-                  weekday: "hidden",
-                  weeks: "w-full flex flex-col border-t border-(--gray-4)",
-                  week: "grid grid-cols-7 divide-x divide-(--gray-4) border-b border-(--gray-4)",
-                  day: "flex-1 min-w-0 aspect-square",
-                  outside: "",
-                  disabled: "opacity-30",
-                }}
-              />
+                        {day.date.getDate()}
+                      </span>
+                      {/* 매출 금액 또는 휴무 표시 */}
+                      {sale && !isOutside && (
+                        sale.is_holiday ? (
+                          <span className="text-[10px] font-bold leading-tight mt-0.5 text-(--gray-3)">
+                            휴
+                          </span>
+                        ) : amountStr ? (
+                          <span
+                            className={[
+                              "text-[10px] font-bold leading-tight mt-0.5",
+                              isSelected
+                                ? "text-white/90"
+                                : dailyGoal > 0 &&
+                                    isPastOrToday &&
+                                    sale.amount < dailyGoal
+                                  ? "text-(--cal-sun)"
+                                  : "text-(--gray-1)",
+                            ].join(" ")}
+                          >
+                            {amountStr}
+                          </span>
+                        ) : null
+                      )}
+                    </button>
+                  );
+                },
+              }}
+              classNames={{
+                root: "w-full flex flex-col",
+                months: "w-full flex flex-col",
+                month: "w-full flex flex-col",
+                month_caption: "hidden",
+                weekdays: "hidden" /* 우리가 직접 렌더링 */,
+                weekday: "hidden",
+                weeks: "w-full flex flex-col border-t border-(--gray-4)",
+                week: "grid grid-cols-7 divide-x divide-(--gray-4) border-b border-(--gray-4)",
+                day: "flex-1 min-w-0 aspect-square",
+                outside: "",
+                disabled: "opacity-30",
+              }}
+            />
           </div>
 
           {/* ── 하단 통계 + FAB ── */}

@@ -343,7 +343,7 @@ export default function SalesCalendar() {
         >
           {/* 헤더와 날짜가 같은 스크롤 영역 너비를 사용해야 열이 맞습니다. */}
           <OverlayScrollArea>
-            <div className="sticky top-0 z-10 grid grid-cols-7 bg-white border-b-2 border-black divide-x divide-(--gray-4)">
+            <div data-scroll-header className="sticky top-0 z-10 grid grid-cols-7 bg-white border-b-2 border-black divide-x divide-(--gray-4)">
               {WEEKDAYS_KO.map((day, i) => (
                 <div
                   key={day}

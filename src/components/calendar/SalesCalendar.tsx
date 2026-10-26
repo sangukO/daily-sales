@@ -340,27 +340,27 @@ export default function SalesCalendar() {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {/* 요일 헤더 */}
-          <div className="shrink-0 grid grid-cols-7 border-b-2 border-black divide-x divide-(--gray-4)">
-            {WEEKDAYS_KO.map((day, i) => (
-              <div
-                key={day}
-                className={[
-                  "py-2 text-center text-base font-black",
-                  i === 0
-                    ? "text-(--cal-sun)"
-                    : i === 6
-                      ? "text-(--cal-sat)"
-                      : "text-black",
-                ].join(" ")}
-              >
-                {day}
-              </div>
-            ))}
-          </div>
+          {/* 헤더와 날짜가 같은 스크롤 영역 너비를 사용해야 열이 맞습니다. */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <div className="sticky top-0 z-10 grid grid-cols-7 bg-white border-b-2 border-black divide-x divide-(--gray-4)">
+              {WEEKDAYS_KO.map((day, i) => (
+                <div
+                  key={day}
+                  className={[
+                    "py-2 text-center text-base font-black",
+                    i === 0
+                      ? "text-(--cal-sun)"
+                      : i === 6
+                        ? "text-(--cal-sat)"
+                        : "text-black",
+                  ].join(" ")}
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
 
-          {/* DayPicker 날짜 그리드 — 6주 달은 이 영역 내에서 스크롤 */}
-          <div className="flex-1 overflow-y-auto">
+            {/* 날짜를 스크롤해도 요일 헤더는 상단에 고정됩니다. */}
             <DayPicker
               locale={ko}
               mode="single"
@@ -475,7 +475,7 @@ export default function SalesCalendar() {
                 weekdays: "hidden" /* 우리가 직접 렌더링 */,
                 weekday: "hidden",
                 weeks: "w-full flex flex-col border-t border-(--gray-4)",
-                week: "flex divide-x divide-(--gray-4) border-b border-(--gray-4)",
+                week: "grid grid-cols-7 divide-x divide-(--gray-4) border-b border-(--gray-4)",
                 day: "flex-1 min-w-0 aspect-square",
                 outside: "",
                 disabled: "opacity-30",
